@@ -1,7 +1,7 @@
 #include <SPI.h>
 #include "RF24.h"
 
-RF24 radio(4, 5); // CE : 7, CSN : 8
+RF24 radio(4, 5); // CE : 4, CSN : 5
 
 byte address[6] = "11111"; //5 byte
 
