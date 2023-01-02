@@ -21,7 +21,7 @@ float slope = 0.0455;
 float   Amps_TRMS1;
 float   Amps_TRMS2;
 
-unsigned long printPeriod   = 1000;
+unsigned long printPeriod   = 500;
 unsigned   long previousMillis = 0;
 
 unsigned long pre1 = 0, pre2 = 0;
@@ -55,12 +55,21 @@ void   loop() {
       Amps_TRMS1 = intercept + slope * inputStats1.sigma();
       Amps_TRMS2 = intercept + slope * inputStats2.sigma();
 
-      Serial.print( "\   Amps1: " );
+      /*Serial.print( "\   Amps1: " );
       Serial.print( Amps_TRMS1 , 4);
       Serial.print( "\   Amps2: " );
-      Serial.println( Amps_TRMS2 , 4);
+      Serial.println( Amps_TRMS2 , 4);*/
+      String aMp = String(Amps_TRMS2, 4);
+      char amp[32] = {0};
+      aMp.toCharArray(amp, aMp.length());
+      
+      Serial.print(aMp);
+      Serial.print("  ");
+      Serial.println(amp);
+      //radio.write(amp,sizeof(amp)); 
+      radio.write(amp,sizeof(amp));
 
-      if(Amps_TRMS1 > 1){//A0이 켜짐
+      /*if(Amps_TRMS1 > 1){//A0이 켜짐
         char text[] = "1";
         radio.write(text,sizeof(text));
       }
@@ -81,7 +90,7 @@ void   loop() {
       }
       else  {
         pre2 = millis();
-      }
+      }*/
       
     }
   }
