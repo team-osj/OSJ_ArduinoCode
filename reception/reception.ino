@@ -10,7 +10,7 @@ float i = 0.0;
 
 void setup() {
   // put your setup code here, to run once:
-  Serial.begin(115200); //PC와 아두이노간 통신라인
+  Serial.begin(9600); //PC와 아두이노간 통신라인
   radio.begin(); //아두이노-RF모듈간 통신라인
   radio.setPALevel(RF24_PA_LOW);
   radio.openReadingPipe(0, address1); //파이프 주소 넘버 ,저장할 파이프 주소
