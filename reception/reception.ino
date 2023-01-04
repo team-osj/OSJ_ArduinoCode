@@ -6,6 +6,8 @@ RF24 radio(4, 5); //CE = 4, SS = 5
 uint8_t address1[6] = "00001";
 uint8_t address2[6] = "10002";
 
+int cnt = 1;
+
 float i = 0.0;
 
 void setup() {
@@ -17,7 +19,8 @@ void setup() {
   radio.openReadingPipe(1, address2);
   radio.startListening();
   Serial.println("CLEARDATA"); //처음에 데이터 리셋
-  Serial.println("LABEL,No.,AMP"); //엑셀 첫행 데이터 이름 설정
+  Serial.println("LABEL,No.,AMP1"); //엑셀 첫행 데이터 이름 설정
+  Serial.println("LABEL,No.,AMP2"); //엑셀 첫행 데이터 이름 설정
 
 }
 
@@ -34,10 +37,17 @@ void loop() {
     // String Data(text);
     // int data;
     // data = Data.toInt();
-    Serial.print("DATA,"); //데이터 행에 데이터를 받겠다는 말
-    Serial.print(i); // No. 데이터를 출력
-    i += 0.5;
-    Serial.print(","); // ,로 데이터를 구분하고 엑셀에는 셀을 구분
-    Serial.println(text); // Distance 데이터 출력
+    if (cnt % 2) {
+      Serial.print("DATA,"); //데이터 행에 데이터를 받겠다는 말
+      Serial.print(i); // No. 데이터를 출력
+      i += 0.5;
+      Serial.print(","); // ,로 데이터를 구분하고 엑셀에는 셀을 구분
+      Serial.println(text); // Distance 데이터 출력
+    }
+    else{
+      Serial.print(","); // ,로 데이터를 구분하고 엑셀에는 셀을 구분
+      Serial.println(text); // Distance 데이터 출력
+    }
+    cnt++;
   }
 }
