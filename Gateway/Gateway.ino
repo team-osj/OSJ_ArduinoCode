@@ -32,8 +32,8 @@ IPAddress localGateway;
 IPAddress localSubnet;
 
 String WIFI_hostname = "ESPGateway_1";
-char Server_domain[] = "nas.pnxelec.com";
-int Server_port = 1900;
+char Server_domain[] = "osj.pnxelec.com";
+int Server_port = 443;
 SocketIOclient socketIO;
 #define USE_SERIAL Serial
 
@@ -335,17 +335,18 @@ void setup() {
     });
     server.begin();
   }
-  socketIO.begin(Server_domain, Server_port, "/socket.io/?EIO=4");
+  socketIO.beginSSL(Server_domain, Server_port, "/socket.io/?EIO=4");
   socketIO.onEvent(socketIOEvent);
 }
 
-void update_state(int device_id,int updated_state){
+void update_state(int device_id,int updated_state,int alive){
     DynamicJsonDocument doc(1024);
     JsonArray array = doc.to<JsonArray>();
     array.add("update_state");//event name
     JsonObject jsondata = array.createNestedObject();
     jsondata["id"] = device_id;
     jsondata["state"] = updated_state;
+    jsondata["alive"] = alive;
     String JSONdata;
     serializeJson(doc, JSONdata);
     socketIO.sendEVENT(JSONdata);
@@ -355,5 +356,7 @@ void update_state(int device_id,int updated_state){
 
 void loop() {
   socketIO.loop();
-  update_state(1,4);
+  if(USE_SERIAL.available()){
+    update_state(1,USE_SERIAL.parseInt(),1);
+  }
 }
