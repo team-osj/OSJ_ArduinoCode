@@ -121,26 +121,34 @@ void   loop() {
           toggle2 = true;
           }*/
       }
-      /*
+      
         Aavg1 = Asum1 / 300;
         Aavg2 = Asum2 / 300;
         Asum1 = 0;
         Asum2 = 0;
         if(Aavg1 < 0.2 && !m1){
          m1 = true;
+         text = '1';
+         radio.write(&text, sizeof(text)); //A0이 켜짐
         }
         else if(m1){
          m1 = false;
-         cnt1++;
+         ///cnt1++;
+         text = '2';
+         radio.write(&text, sizeof(text)); //A0이 꺼짐
         }
         if(Aavg2 < 0.2 && !m2){
          m2 = true;
+         text = '3';
+         radio.write(&text, sizeof(text)); //A1이 켜짐
         }
         else if(m2){
          m2 = false;
-         cnt2++;
+         ///cnt2++;
+         text = '4';
+         radio.write(&text, sizeof(text)); //A1이 꺼짐
         }
-        if(cnt1 == 1){
+        /*/if(cnt1 == 1){
          text = '1';
          radio.write(&text, sizeof(text)); //A0이 켜짐
         }
@@ -157,7 +165,7 @@ void   loop() {
          text = '4';
          radio.write(&text, sizeof(text)); //A0이 꺼짐
          cnt2 = 0;
-        }*/
+        }/*/
     }
   }
 }
