@@ -6,8 +6,14 @@
 #include <WebSocketsClient.h>
 #include <SocketIOclient.h>
 #include "SPIFFS.h"
+#include <SPI.h>
+#include "RF24.h"
 
 AsyncWebServer server(80);
+RF24 radio(4, 5); //CE = 4, SS = 5
+
+uint8_t address1[6] = "00001";
+uint8_t address2[6] = "10002";
 
 const char* PARAM_INPUT_1 = "ssid";
 const char* PARAM_INPUT_2 = "pass";
@@ -189,6 +195,11 @@ bool initWiFi() {
 
 void setup() {
   Serial.begin(115200);
+  radio.begin(); //아두이노-RF모듈간 통신라인
+  radio.setPALevel(RF24_PA_LOW);
+  radio.openReadingPipe(0, address1); //파이프 주소 넘버 ,저장할 파이프 주소
+  radio.openReadingPipe(1, address2);
+  radio.startListening();
   USE_SERIAL.setDebugOutput(true);
   initSPIFFS();
   ssid = readFile(SPIFFS, ssidPath);
@@ -356,6 +367,28 @@ void update_state(int device_id,int updated_state,int alive){
 
 void loop() {
   socketIO.loop();
+  if (radio.available(&pipe)) {
+    char text[30];
+    radio.read(text, sizeof(text));
+    String Data(text);
+    int data;
+    data = Data.toInt();
+    Serial.println(data); 
+    switch(text){
+      case 1:
+        update_state(1,1,1);
+        break;
+      case 2:
+        update_state(1,0,1);
+        break;
+      case 3:
+        update_state(2,1,1);
+        break;
+      case 4:
+        update_state(2,0,1);
+        break;
+    }
+  }
   if(USE_SERIAL.available()){
     update_state(1,USE_SERIAL.parseInt(),1);
   }
