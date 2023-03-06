@@ -376,16 +376,16 @@ void loop() {
     Serial.println(data); 
     switch(text){
       case 1:
-        update_state(1,1,1);
-        break;
-      case 2:
         update_state(1,0,1);
         break;
+      case 2:
+        update_state(1,1,1);
+        break;
       case 3:
-        update_state(2,1,1);
+        update_state(2,0,1);
         break;
       case 4:
-        update_state(2,0,1);
+        update_state(2,1,1);
         break;
     }
   }
