@@ -5,7 +5,7 @@
 #define ACS_Pin1 A0
 #define ACS_Pin2 A1
 
-bool m1 = false; // true : 꺼짐, false : 켜짐
+bool m1 = false; // true : 켜짐, false : 꺼짐
 bool m2 = false;
 
 float ACS_Value1;
@@ -126,7 +126,7 @@ void   loop() {
         Aavg2 = Asum2 / 300;
         Asum1 = 0;
         Asum2 = 0;
-        if(Aavg1 < 0.2 && !m1){
+        if(Aavg1 > 0.2 && !m1){
          m1 = true;
          text = '1';
          radio.write(&text, sizeof(text)); //A0이 켜짐
@@ -137,7 +137,7 @@ void   loop() {
          text = '2';
          radio.write(&text, sizeof(text)); //A0이 꺼짐
         }
-        if(Aavg2 < 0.2 && !m2){
+        if(Aavg2 > 0.2 && !m2){
          m2 = true;
          text = '3';
          radio.write(&text, sizeof(text)); //A1이 켜짐
