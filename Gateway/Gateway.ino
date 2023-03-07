@@ -377,16 +377,16 @@ void loop() {
     Serial.println(data); 
     switch(data){
       case 1:
-        update_state(1,0,1);
+        update_state(1,1,1);  //1번 디바이스 사용가능
         break;
       case 2:
-        update_state(1,1,1);
+        update_state(1,0,1);  //1번 디바이스 사용불가
         break;
       case 3:
-        update_state(2,0,1);
+        update_state(2,1,1);  //2번 디바이스 사용가능
         break;
       case 4:
-        update_state(2,1,1);
+        update_state(2,0,1);  //2번 디바이스 사용불가
         break;
     }
   }
