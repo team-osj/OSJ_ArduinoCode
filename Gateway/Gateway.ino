@@ -5,8 +5,8 @@
 #include <ArduinoJson.h>
 #include <WebSocketsClient.h>
 #include <SocketIOclient.h>
-#include "SPIFFS.h"
 #include <SPI.h>
+#include "SPIFFS.h"
 #include "RF24.h"
 
 AsyncWebServer server(80);
@@ -367,6 +367,7 @@ void update_state(int device_id,int updated_state,int alive){
 
 void loop() {
   socketIO.loop();
+  byte pipe;
   if (radio.available(&pipe)) {
     char text[30];
     radio.read(text, sizeof(text));
@@ -374,7 +375,7 @@ void loop() {
     int data;
     data = Data.toInt();
     Serial.println(data); 
-    switch(text){
+    switch(data){
       case 1:
         update_state(1,0,1);
         break;
