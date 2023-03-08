@@ -374,7 +374,7 @@ void loop() {
     String Data(text);
     int data;
     data = Data.toInt();
-    Serial.println(data); 
+    USE_SERIAL.println(data); 
     switch(data){
       case 1:
         update_state(1,1,1);  //1번 디바이스 사용가능
@@ -389,8 +389,9 @@ void loop() {
         update_state(2,0,1);  //2번 디바이스 사용불가
         break;
     }
+    USE_SERIAL.println("haha");
   }
-  if(USE_SERIAL.available()){
+  /*if(USE_SERIAL.available()){
     update_state(1,USE_SERIAL.parseInt(),1);
-  }
+  }*/
 }
