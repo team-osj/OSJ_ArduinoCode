@@ -373,7 +373,7 @@ void loop() {
     char text[30];
     radio.read(text, sizeof(text));
     while(radio.available(&pipe)){
-      unsigned long trash_value;
+      char trash_value[30];
       radio.read(trash_value, sizeof(trash_value));
     }
     
