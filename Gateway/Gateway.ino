@@ -194,6 +194,7 @@ bool initWiFi() {
 }
 
 void setup() {
+  radio.begin();
   Serial.begin(115200);
   radio.begin(); //아두이노-RF모듈간 통신라인
   radio.setPALevel(RF24_PA_LOW);
@@ -364,13 +365,18 @@ void update_state(int device_id,int updated_state,int alive){
     USE_SERIAL.println(JSONdata);
     return;
 }
-
+  
 void loop() {
   socketIO.loop();
   byte pipe;
   if (radio.available(&pipe)) {
     char text[30];
     radio.read(text, sizeof(text));
+    while(radio.available(&pipe)){
+      unsigned long trash_value;
+      radio.read(trash_value, sizeof(trash_value));
+    }
+    
     String Data(text);
     int data;
     data = Data.toInt();
@@ -390,6 +396,8 @@ void loop() {
         break;
     }
     USE_SERIAL.println("haha");
+    radio.stopListening();
+    radio.startListening();
   }
   /*if(USE_SERIAL.available()){
     update_state(1,USE_SERIAL.parseInt(),1);
