@@ -44,13 +44,14 @@ float Aavg1 = 0;
 float Aavg2 = 0;
 
 void setup() {
-  Serial.begin( 9600 );
+  Serial.begin( 115200 );
   pinMode(ACS_Pin1, INPUT);
   pinMode(ACS_Pin2, INPUT);
   radio.begin(); //아두이노-RF모듈간 통신라인
-  radio.setPALevel(RF24_PA_LOW);
+  radio.setPALevel(RF24_PA_MAX);
   radio.openWritingPipe(address1); //송신하는 주소
   radio.stopListening();
+  radio.write('2',sizeof(char));
 }
 
 void   loop() {
@@ -88,11 +89,11 @@ void   loop() {
         aMp1.toCharArray(amp1, aMp1.length());
         aMp2.toCharArray(amp2, aMp2.length());
 
-        //Serial.print(aMp);
-        //Serial.print("  ");
-        //Serial.println(amp);
-        radio.write(amp1, sizeof(amp1));
-        radio.write(amp2, sizeof(amp2));
+        //Serial.print(aMp);//
+        //Serial.print("  ");//
+        //Serial.println(amp);//
+        //radio.write(amp1, sizeof(amp1));
+        //radio.write(amp2, sizeof(amp2));
 
         /*if (Amps_TRMS1 > 1 ) { //A0이 켜짐
           pre1 = millis();
@@ -122,32 +123,7 @@ void   loop() {
           }*/
       }
       
-        Aavg1 = Asum1 / 300;
-        Aavg2 = Asum2 / 300;
-        Asum1 = 0;
-        Asum2 = 0;
-        if(Aavg1 > 0.2 && !m1){
-         m1 = true;
-         text = '1';
-         radio.write(&text, sizeof(text)); //A0이 켜짐
-        }
-        else if(m1){
-         m1 = false;
-         ///cnt1++;
-         text = '2';
-         radio.write(&text, sizeof(text)); //A0이 꺼짐
-        }
-        if(Aavg2 > 0.2 && !m2){
-         m2 = true;
-         text = '3';
-         radio.write(&text, sizeof(text)); //A1이 켜짐
-        }
-        else if(m2){
-         m2 = false;
-         ///cnt2++;
-         text = '4';
-         radio.write(&text, sizeof(text)); //A1이 꺼짐
-        }
+        
         /*/if(cnt1 == 1){
          text = '1';
          radio.write(&text, sizeof(text)); //A0이 켜짐
@@ -167,6 +143,34 @@ void   loop() {
          cnt2 = 0;
         }/*/
     }
+    
+        Aavg1 = Asum1 / 300;
+        Aavg2 = Asum2 / 300;
+        Asum1 = 0;
+        Asum2 = 0;
+        if(Aavg1 > 0.15 && !m1){
+         m1 = true;
+         text = '1';
+         radio.write(&text, sizeof(text)); 
+        }
+        else if(m1){
+         m1 = false;
+         ///cnt1++;
+         text = '2';
+         radio.write(&text, sizeof(text)); 
+        }
+        if(Aavg2 > 0.15 && !m2){
+         m2 = true;
+         text = '3';
+         radio.write(&text, sizeof(text));
+        }
+        else if(m2){
+         m2 = false;
+         ///cnt2++;
+         text = '4';
+         radio.write(&text, sizeof(text)); 
+        }
+      Serial.println(text);
   }
 }
   //}
