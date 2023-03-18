@@ -1,6 +1,8 @@
 #include <SPI.h>
 #include "RF24.h"
 
+#define valueCnt 4 //엑셀에 찍을 값 갯수
+
 RF24 radio(4, 5); //CE = 4, SS = 5
 
 uint8_t address1[6] = "00001";
@@ -30,10 +32,7 @@ void loop() {
     //RF무선모듈쪽으로 뭔가 수신된값이 존재한다면~
     char text[30];
     radio.read(text, sizeof(text));
-    /*Serial.print(pipe);
-      Serial.print(",");
-      Serial.println(text);*/
-    if (cnt % 4 == 0) {
+    if (cnt % valueCnt == 0) {
       Serial.print("DATA,"); //데이터 행에 데이터를 받겠다는 말
       Serial.print(i); // No. 데이터를 출력
       i += 0.5;
@@ -42,7 +41,7 @@ void loop() {
     }
     else {
       Serial.print(","); // ,로 데이터를 구분하고 엑셀에는 셀을 구분
-      if((cnt % 4) == 3)
+      if((cnt % valueCnt) == 3)
       Serial.println(text); // Distance 데이터 출력
       else
       Serial.print(text);
