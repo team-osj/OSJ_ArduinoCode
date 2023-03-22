@@ -1,7 +1,7 @@
 #include <SPI.h>
 #include "RF24.h"
 
-#define valueCnt 4 //엑셀에 찍을 값 갯수
+#define valueCnt 6 //엑셀에 찍을 값 갯수
 
 RF24 radio(4, 5); //CE = 4, SS = 5
 
@@ -41,7 +41,7 @@ void loop() {
     }
     else {
       Serial.print(","); // ,로 데이터를 구분하고 엑셀에는 셀을 구분
-      if((cnt % valueCnt) == 3)
+      if((cnt % valueCnt) == (valueCnt - 1))
       Serial.println(text); // Distance 데이터 출력
       else
       Serial.print(text);

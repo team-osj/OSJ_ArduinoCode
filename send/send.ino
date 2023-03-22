@@ -1,9 +1,10 @@
-#include <Filters.h>
+#include <Filters.h>  
 #include <SPI.h>
 #include "RF24.h"
 
 #define ACS_Pin1 A0
 #define ACS_Pin2 A1
+
 
 bool m1 = false; // true : 켜짐, false : 꺼짐
 bool m2 = false;
