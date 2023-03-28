@@ -36,14 +36,16 @@ char text;
 // ============================================== millis()&if()
 unsigned long printPeriod = 500;
 unsigned long previousMillis = 0;
-unsigned long endPeriod1 = 20000;
+unsigned long endPeriod1 = 65000;
 unsigned long previousMillis_end1 = 0;
-unsigned long endPeriod2 = 20000;
+unsigned long endPeriod2 = 65000;
 unsigned long previousMillis_end2 = 0;
-bool m1 = false, m2 = false;
+int m1 = 0, m2 = 0;
 
 bool mode = false;
 
+int cnt1 = 1;
+int cnt2 = 1;
 // ======================================= 비접촉수위센서
 int WaterSensorData1 = 0;
 int WaterSensorData2 = 0;
@@ -108,6 +110,7 @@ void loop() {
     Amps_TRMS1 = intercept + slope * inputStats1.sigma();
     Amps_TRMS2 = intercept + slope * inputStats2.sigma();
 
+    if(previousMillis > millis()) previousMillis = millis();
     if (millis() - previousMillis >= printPeriod) {
       previousMillis = millis();
 
@@ -131,41 +134,59 @@ void loop() {
       Serial.println(WaterSensorData2);
       Serial.print("L/h2 : ");
       Serial.println(l_hour2);
+      Serial.print("Time : ");
+      Serial.println(millis());
+      Serial.println();
       
     }
 
-    if (Amps_TRMS1 > 0.15 || WaterSensorData1  || l_hour1) {
-      if (m1 == 0) {
+    if (Amps_TRMS1 > 0.5 || WaterSensorData1  || l_hour1 > 100) {
+      if (cnt1 == 1) {
         text = '2';
         radio.write(&text, sizeof(text));
-        m1 = true;
+        
+        cnt1 = 0;
+        Serial.println(text);
       }
+      m1 = 1;
     }
     else {
+      if(previousMillis_end1 > millis())  previousMillis_end1 = millis();
       if (m1) {
         previousMillis_end1 = millis();
-        m1 = false;
+        m1 = 0;
       }
-      if (millis() - previousMillis_end1 >= endPeriod1 ) {
+      else if(cnt1);
+      else if (millis() - previousMillis_end1 >= endPeriod1) {
         text = '1';
         radio.write(&text, sizeof(text));
+        cnt1 = 1;
+        Serial.println(text);
       }
     }
-    if (Amps_TRMS2 > 0.15 || WaterSensorData2 || l_hour2) {
-      if (m2 == 0) {
+    
+    if (Amps_TRMS2 > 0.5 || WaterSensorData2 || l_hour2 > 100) {
+      if (cnt2 == 1) {
         text = '4';
         radio.write(&text, sizeof(text));
-        m2 = true;
+        
+        cnt2 = 0;
+        Serial.println(text);
       }
+      m2 = 1;
     }
     else {
+      if(previousMillis_end2 > millis())  previousMillis_end2 = millis();
       if (m2) {
         previousMillis_end2 = millis();
-        m2 = false;
+        m2 = 0;
       }
-      if (millis() - previousMillis_end2 >= endPeriod2 ) {
+      else if(cnt2);
+      else if (millis() - previousMillis_end2 >= endPeriod2 ) {
         text = '3';
         radio.write(&text, sizeof(text));
+        cnt2 = 1;
+        Serial.println(text);
       }
     }
   }
