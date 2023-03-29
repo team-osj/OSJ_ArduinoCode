@@ -74,69 +74,69 @@ void socketIOEvent(socketIOmessageType_t type, uint8_t *payload, size_t length)
 {
   switch (type)
   {
-  case sIOtype_DISCONNECT:
-    USE_SERIAL.printf("[IOc] Disconnected!\n");
-    break;
-  case sIOtype_CONNECT:
-    USE_SERIAL.printf("[IOc] Connected to url: %s\n", payload);
+    case sIOtype_DISCONNECT:
+      USE_SERIAL.printf("[IOc] Disconnected!\n");
+      break;
+    case sIOtype_CONNECT:
+      USE_SERIAL.printf("[IOc] Connected to url: %s\n", payload);
 
-    // join default namespace (no auto join in Socket.IO V3)
-    socketIO.send(sIOtype_CONNECT, "/");
-    break;
-  case sIOtype_EVENT:
-  {
-    char *sptr = NULL;
-    int id = strtol((char *)payload, &sptr, 10);
-    USE_SERIAL.printf("[IOc] get event: %s id: %d\n", payload, id);
-    if (id)
-    {
-      payload = (uint8_t *)sptr;
-    }
-    DynamicJsonDocument doc(1024);
-    DeserializationError error = deserializeJson(doc, payload, length);
-    if (error)
-    {
-      USE_SERIAL.print(F("deserializeJson() failed: "));
-      USE_SERIAL.println(error.c_str());
-      return;
-    }
+      // join default namespace (no auto join in Socket.IO V3)
+      socketIO.send(sIOtype_CONNECT, "/");
+      break;
+    case sIOtype_EVENT:
+      {
+        char *sptr = NULL;
+        int id = strtol((char *)payload, &sptr, 10);
+        USE_SERIAL.printf("[IOc] get event: %s id: %d\n", payload, id);
+        if (id)
+        {
+          payload = (uint8_t *)sptr;
+        }
+        DynamicJsonDocument doc(1024);
+        DeserializationError error = deserializeJson(doc, payload, length);
+        if (error)
+        {
+          USE_SERIAL.print(F("deserializeJson() failed: "));
+          USE_SERIAL.println(error.c_str());
+          return;
+        }
 
-    String eventName = doc[0];
-    USE_SERIAL.printf("[IOc] event name: %s\n", eventName.c_str());
+        String eventName = doc[0];
+        USE_SERIAL.printf("[IOc] event name: %s\n", eventName.c_str());
 
-    // Message Includes a ID for a ACK (callback)
-    if (id)
-    {
-      // creat JSON message for Socket.IO (ack)
-      DynamicJsonDocument docOut(1024);
-      JsonArray array = docOut.to<JsonArray>();
+        // Message Includes a ID for a ACK (callback)
+        if (id)
+        {
+          // creat JSON message for Socket.IO (ack)
+          DynamicJsonDocument docOut(1024);
+          JsonArray array = docOut.to<JsonArray>();
 
-      // add payload (parameters) for the ack (callback function)
-      JsonObject param1 = array.createNestedObject();
-      param1["now"] = millis();
+          // add payload (parameters) for the ack (callback function)
+          JsonObject param1 = array.createNestedObject();
+          param1["now"] = millis();
 
-      // JSON to String (serializion)
-      String output;
-      output += id;
-      serializeJson(docOut, output);
+          // JSON to String (serializion)
+          String output;
+          output += id;
+          serializeJson(docOut, output);
 
-      // Send event
-      socketIO.send(sIOtype_ACK, output);
-    }
-  }
-  break;
-  case sIOtype_ACK:
-    USE_SERIAL.printf("[IOc] get ack: %u\n", length);
-    break;
-  case sIOtype_ERROR:
-    USE_SERIAL.printf("[IOc] get error: %u\n", length);
-    break;
-  case sIOtype_BINARY_EVENT:
-    USE_SERIAL.printf("[IOc] get binary: %u\n", length);
-    break;
-  case sIOtype_BINARY_ACK:
-    USE_SERIAL.printf("[IOc] get binary ack: %u\n", length);
-    break;
+          // Send event
+          socketIO.send(sIOtype_ACK, output);
+        }
+      }
+      break;
+    case sIOtype_ACK:
+      USE_SERIAL.printf("[IOc] get ack: %u\n", length);
+      break;
+    case sIOtype_ERROR:
+      USE_SERIAL.printf("[IOc] get error: %u\n", length);
+      break;
+    case sIOtype_BINARY_EVENT:
+      USE_SERIAL.printf("[IOc] get binary: %u\n", length);
+      break;
+    case sIOtype_BINARY_ACK:
+      USE_SERIAL.printf("[IOc] get binary ack: %u\n", length);
+      break;
   }
 }
 
@@ -244,128 +244,131 @@ bool initWiFi()
 
 void SettingPage()
 {
-  server.on("/", HTTP_GET, [](AsyncWebServerRequest *request)
-            { request->send(SPIFFS, "/wifimanager.html", "text/html"); });
+  server.on("/", HTTP_GET, [](AsyncWebServerRequest * request)
+  {
+    request->send(SPIFFS, "/wifimanager.html", "text/html");
+  });
 
   server.serveStatic("/", SPIFFS, "/");
 
-  server.on("/", HTTP_POST, [](AsyncWebServerRequest *request)
-            {
-      int params = request->params();
-      for(int i=0;i<params;i++){
-        AsyncWebParameter* p = request->getParam(i);
-        if(p->isPost()){
-          // HTTP POST ssid value
-          if (p->name() == PARAM_INPUT_1) {
-            ssid = p->value().c_str();
-            USE_SERIAL.print("SSID set to: ");
-            USE_SERIAL.println(ssid);
-            // Write file to save value
-            writeFile(SPIFFS, ssidPath, ssid.c_str());
-          }
-          // HTTP POST pass value
-          if (p->name() == PARAM_INPUT_2) {
-            pass = p->value().c_str();
-            USE_SERIAL.print("Password set to: ");
-            USE_SERIAL.println(pass);
-            // Write file to save value
-            writeFile(SPIFFS, passPath, pass.c_str());
-          }
-          // HTTP POST ip value
-          if (p->name() == PARAM_INPUT_3) {
-            ip = p->value().c_str();
-            USE_SERIAL.print("IP Address set to: ");
-            USE_SERIAL.println(ip);
-            // Write file to save value
-            writeFile(SPIFFS, ipPath, ip.c_str());
-          }
-          // HTTP POST gateway value
-          if (p->name() == PARAM_INPUT_4) {
-            gateway = p->value().c_str();
-            USE_SERIAL.print("Gateway set to: ");
-            USE_SERIAL.println(gateway);
-            // Write file to save value
-            writeFile(SPIFFS, gatewayPath, gateway.c_str());
-          }
-          // HTTP POST subnet value
-          if (p->name() == PARAM_INPUT_5) {
-            netmask = p->value().c_str();
-            USE_SERIAL.print("Subnet set to: ");
-            USE_SERIAL.println(netmask);
-            // Write file to save value
-            writeFile(SPIFFS, subnetPath, netmask.c_str());
-          }
-
-          // HTTP POST address1 value
-          if (p->name() == PARAM_INPUT_6) {
-            address1 = p->value().c_str();
-            USE_SERIAL.print("address1 set to: ");
-            USE_SERIAL.println(address1);
-            // Write file to save value
-            writeFile(SPIFFS, addr1Path, address1.c_str());
-          }
-          // HTTP POST address2 value
-          if (p->name() == PARAM_INPUT_7) {
-            address2 = p->value().c_str();
-            USE_SERIAL.print("address2 set to: ");
-            USE_SERIAL.println(address2);
-            // Write file to save value
-            writeFile(SPIFFS, addr2Path, address2.c_str());
-          }
-          // HTTP POST address3 value
-          if (p->name() == PARAM_INPUT_8) {
-            address3 = p->value().c_str();
-            USE_SERIAL.print("address3 set to: ");
-            USE_SERIAL.println(address3);
-            // Write file to save value
-            writeFile(SPIFFS, addr3Path, address3.c_str());
-          }
-          // HTTP POST address4 value
-          if (p->name() == PARAM_INPUT_9) {
-            address4 = p->value().c_str();
-            USE_SERIAL.print("address4 set to: ");
-            USE_SERIAL.println(address4);
-            // Write file to save value
-            writeFile(SPIFFS, addr4Path, address4.c_str());
-          }
-          // HTTP POST address5 value
-          if (p->name() == PARAM_INPUT_10) {
-            address5 = p->value().c_str();
-            USE_SERIAL.print("address5 set to: ");
-            USE_SERIAL.println(address5);
-            // Write file to save value
-            writeFile(SPIFFS, addr5Path, address5.c_str());
-          }
-          // HTTP POST address6 value
-          if (p->name() == PARAM_INPUT_11) {
-            address6 = p->value().c_str();
-            USE_SERIAL.print("address6 set to: ");
-            USE_SERIAL.println(address6);
-            // Write file to save value
-            writeFile(SPIFFS, addr6Path, address6.c_str());
-          }
-          // HTTP POST address7 value
-          if (p->name() == PARAM_INPUT_12) {
-            address7 = p->value().c_str();
-            USE_SERIAL.print("address7 set to: ");
-            USE_SERIAL.println(address7);
-            // Write file to save value
-            writeFile(SPIFFS, addr7Path, address7.c_str());
-          }
-          // HTTP POST address8 value
-          if (p->name() == PARAM_INPUT_13) {
-            address8 = p->value().c_str();
-            USE_SERIAL.print("address8 set to: ");
-            USE_SERIAL.println(address8);
-            // Write file to save value
-            writeFile(SPIFFS, addr8Path, address8.c_str());
-          }
-          //USE_SERIAL.printf("POST[%s]: %s\n", p->name().c_str(), p->value().c_str());
+  server.on("/", HTTP_POST, [](AsyncWebServerRequest * request)
+  {
+    int params = request->params();
+    for (int i = 0; i < params; i++) {
+      AsyncWebParameter* p = request->getParam(i);
+      if (p->isPost()) {
+        // HTTP POST ssid value
+        if (p->name() == PARAM_INPUT_1) {
+          ssid = p->value().c_str();
+          USE_SERIAL.print("SSID set to: ");
+          USE_SERIAL.println(ssid);
+          // Write file to save value
+          writeFile(SPIFFS, ssidPath, ssid.c_str());
         }
+        // HTTP POST pass value
+        if (p->name() == PARAM_INPUT_2) {
+          pass = p->value().c_str();
+          USE_SERIAL.print("Password set to: ");
+          USE_SERIAL.println(pass);
+          // Write file to save value
+          writeFile(SPIFFS, passPath, pass.c_str());
+        }
+        // HTTP POST ip value
+        if (p->name() == PARAM_INPUT_3) {
+          ip = p->value().c_str();
+          USE_SERIAL.print("IP Address set to: ");
+          USE_SERIAL.println(ip);
+          // Write file to save value
+          writeFile(SPIFFS, ipPath, ip.c_str());
+        }
+        // HTTP POST gateway value
+        if (p->name() == PARAM_INPUT_4) {
+          gateway = p->value().c_str();
+          USE_SERIAL.print("Gateway set to: ");
+          USE_SERIAL.println(gateway);
+          // Write file to save value
+          writeFile(SPIFFS, gatewayPath, gateway.c_str());
+        }
+        // HTTP POST subnet value
+        if (p->name() == PARAM_INPUT_5) {
+          netmask = p->value().c_str();
+          USE_SERIAL.print("Subnet set to: ");
+          USE_SERIAL.println(netmask);
+          // Write file to save value
+          writeFile(SPIFFS, subnetPath, netmask.c_str());
+        }
+
+        // HTTP POST address1 value
+        if (p->name() == PARAM_INPUT_6) {
+          address1 = p->value().c_str();
+          USE_SERIAL.print("address1 set to: ");
+          USE_SERIAL.println(address1);
+          // Write file to save value
+          writeFile(SPIFFS, addr1Path, address1.c_str());
+        }
+        // HTTP POST address2 value
+        if (p->name() == PARAM_INPUT_7) {
+          address2 = p->value().c_str();
+          USE_SERIAL.print("address2 set to: ");
+          USE_SERIAL.println(address2);
+          // Write file to save value
+          writeFile(SPIFFS, addr2Path, address2.c_str());
+        }
+        // HTTP POST address3 value
+        if (p->name() == PARAM_INPUT_8) {
+          address3 = p->value().c_str();
+          USE_SERIAL.print("address3 set to: ");
+          USE_SERIAL.println(address3);
+          // Write file to save value
+          writeFile(SPIFFS, addr3Path, address3.c_str());
+        }
+        // HTTP POST address4 value
+        if (p->name() == PARAM_INPUT_9) {
+          address4 = p->value().c_str();
+          USE_SERIAL.print("address4 set to: ");
+          USE_SERIAL.println(address4);
+          // Write file to save value
+          writeFile(SPIFFS, addr4Path, address4.c_str());
+        }
+        // HTTP POST address5 value
+        if (p->name() == PARAM_INPUT_10) {
+          address5 = p->value().c_str();
+          USE_SERIAL.print("address5 set to: ");
+          USE_SERIAL.println(address5);
+          // Write file to save value
+          writeFile(SPIFFS, addr5Path, address5.c_str());
+        }
+        // HTTP POST address6 value
+        if (p->name() == PARAM_INPUT_11) {
+          address6 = p->value().c_str();
+          USE_SERIAL.print("address6 set to: ");
+          USE_SERIAL.println(address6);
+          // Write file to save value
+          writeFile(SPIFFS, addr6Path, address6.c_str());
+        }
+        // HTTP POST address7 value
+        if (p->name() == PARAM_INPUT_12) {
+          address7 = p->value().c_str();
+          USE_SERIAL.print("address7 set to: ");
+          USE_SERIAL.println(address7);
+          // Write file to save value
+          writeFile(SPIFFS, addr7Path, address7.c_str());
+        }
+        // HTTP POST address8 value
+        if (p->name() == PARAM_INPUT_13) {
+          address8 = p->value().c_str();
+          USE_SERIAL.print("address8 set to: ");
+          USE_SERIAL.println(address8);
+          // Write file to save value
+          writeFile(SPIFFS, addr8Path, address8.c_str());
+        }
+        //USE_SERIAL.printf("POST[%s]: %s\n", p->name().c_str(), p->value().c_str());
       }
-      request->send(200, "text/plain", "Done. ESP will restart, connect to your router and go to IP address: " + ip);
-      delay(3000);
-      ESP.restart(); });
+    }
+    request->send(200, "text/plain", "Done. ESP will restart, connect to your router and go to IP address: " + ip);
+    delay(3000);
+    ESP.restart();
+  });
   server.begin();
 }
 
@@ -463,31 +466,37 @@ void loop()
       char trash_value[30];
       radio.read(trash_value, sizeof(trash_value));
     }
-
-    String Data(text);
+    int onOff = text[0] - 49;
+    String Data(&text[1]);
     int data;
     data = Data.toInt();
     USE_SERIAL.println(data);
-    switch (data)
-    {
-    case 1:
+    update_state(data, onOff, 1);
+    USE_SERIAL.print("onOff : ");
+    USE_SERIAL.println(onOff);
+    USE_SERIAL.print("data : ");
+    USE_SERIAL.println(data);
+    /*switch (data)
+      {
+      case 1:
       update_state(1, 1, 1); // 1번 디바이스 사용가능
       break;
-    case 2:
+      case 2:
       update_state(1, 0, 1); // 1번 디바이스 사용불가
       break;
-    case 3:
+      case 3:
       update_state(2, 1, 1); // 2번 디바이스 사용가능
       break;
-    case 4:
+      case 4:
       update_state(2, 0, 1); // 2번 디바이스 사용불가
       break;
-    }
-    USE_SERIAL.println("haha");
-    radio.stopListening();
-    radio.startListening();
+      }
+      USE_SERIAL.println("haha");
+      radio.stopListening();
+      radio.startListening();
+      }*/
+    /*if(USE_SERIAL.available()){
+      update_state(1,USE_SERIAL.parseInt(),1);
+      }*/
   }
-  /*if(USE_SERIAL.available()){
-    update_state(1,USE_SERIAL.parseInt(),1);
-  }*/
 }
