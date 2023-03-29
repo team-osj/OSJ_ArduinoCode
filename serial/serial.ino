@@ -24,8 +24,6 @@ void setup() {
   radio.openWritingPipe(address1); //송신하는 주소
   radio.stopListening();
   Serial.println(EPR);
-
-  
 }
 
 void loop() {
@@ -137,20 +135,10 @@ int SEND(String a) {
   int result = a.compareTo(b);
   if (!result) {
     String rf = inString.substring(dex1 + 1, end - 1);
+    char text[30] = {0};
+    rf.toCharArray(text, rf.length());
     //대충 통신하는 내용
-    if (rf == "1") {
-      char text = '1';
-      radio.write(&text, sizeof(text));
-      Serial.println("ok");
-    }
-    else if (rf == "0") {
-      char text = '0';
-      radio.write(&text, sizeof(text));
-      Serial.println("ok0");
-    }
-    else {
-      Serial.println("no");
-    }
+    radio.write(&text, sizeof(text));
     return 1;
   }
   else {
@@ -168,6 +156,9 @@ int SETNUM(String a){
     char text[30] = {0};
     text[0] = onOff[0];
     number.toCharArray(&text[1], number.length());
+    int numberi = number.toInt();
+    EEPROM.write(3, numberi);
+    Serial.println(numberi);
   }
 }
 
