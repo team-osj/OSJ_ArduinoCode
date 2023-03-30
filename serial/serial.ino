@@ -23,7 +23,13 @@ void setup() {
   radio.setPALevel(RF24_PA_MAX);
   radio.openWritingPipe(address1); //송신하는 주소
   radio.stopListening();
+  Serial.print("adress : ");
   Serial.println(EPR);
+  byte number = EEPROM.read(3);
+  int numberi = int(number);
+  Serial.print("number : ");
+  Serial.println(number);
+    
 }
 
 void loop() {
@@ -39,6 +45,7 @@ void loop() {
     else if (RFSEND(a));
     else if (SEND(a));
     else if(SETNUM(a));
+    else if(NOWSTATE(a));
     else Serial.println("unknown commend");
   }
 }
@@ -47,11 +54,7 @@ int RFSET(String a) {
   String b = "RFSET";
   int result = a.compareTo(b);
   if (!result) {
-    byte HIByte = EEPROM.read(1); // read(주소)
-    byte LOByte = EEPROM.read(2); // read(주소)
-    int EPR = word(HIByte, LOByte);
-    Serial.print("now : ");
-    Serial.println(EPR);
+    
 
 
     String rf = inString.substring(dex1 + 1, end - 1);
@@ -159,7 +162,27 @@ int SETNUM(String a){
     int numberi = number.toInt();
     EEPROM.write(3, numberi);
     Serial.println(numberi);
+    return 1;
   }
+  return 0;
+}
+
+int NOWSTATE(String a){
+  String b = "NOWSTATE";
+  int result = a.compareTo(b);
+  if (!result) {
+    byte HIByte = EEPROM.read(1); // read(주소)
+    byte LOByte = EEPROM.read(2); // read(주소)
+    int EPR = word(HIByte, LOByte);
+    byte number = EEPROM.read(3);
+    int numberi = int(number);
+    Serial.print("adress : ");
+    Serial.println(EPR);
+    Serial.print("number : ");
+    Serial.println(number);
+    return 1;
+  }
+  return 0;
 }
 
 void software_Reset(){

@@ -12,8 +12,14 @@
 AsyncWebServer server(80);
 RF24 radio(4, 5); // CE = 4, SS = 5
 
-uint8_t address1_uint[6] = "00001";
-uint8_t address2_uint[6] = "10002";
+uint8_t address1_uint[6] = {0};
+uint8_t address2_uint[6] = {0};
+uint8_t address3_uint[6] = {0};
+uint8_t address4_uint[6] = {0};
+uint8_t address5_uint[6] = {0};
+uint8_t address6_uint[6] = {0};
+uint8_t address7_uint[6] = {0};
+uint8_t address8_uint[6] = {0};
 
 const char *PARAM_INPUT_1 = "ssid";
 const char *PARAM_INPUT_2 = "pass";
@@ -374,12 +380,12 @@ void SettingPage()
 
 void setup()
 {
+
   radio.begin();
   Serial.begin(115200);
   radio.begin(); // 아두이노-RF모듈간 통신라인
   radio.setPALevel(RF24_PA_LOW);
-  radio.openReadingPipe(0, address1_uint); // 파이프 주소 넘버 ,저장할 파이프 주소
-  radio.openReadingPipe(1, address2_uint);
+  
   radio.startListening();
   USE_SERIAL.setDebugOutput(true);
   initSPIFFS();
@@ -397,6 +403,54 @@ void setup()
   address6 = readFile(SPIFFS, addr6Path);
   address7 = readFile(SPIFFS, addr7Path);
   address8 = readFile(SPIFFS, addr8Path);
+  for (int i = 0; i < 5; i++) {
+    address1_uint[i] = address1[i];
+    USE_SERIAL.print(address1_uint[i]);
+  }
+  USE_SERIAL.println();
+  for (int i = 0; i < 5; i++) {
+    address2_uint[i] = address2[i];
+    USE_SERIAL.print(address2_uint[i]);
+  }
+  USE_SERIAL.println();
+  for (int i = 0; i < 5; i++) {
+    address3_uint[i] = address3[i];
+    USE_SERIAL.print(address3_uint[i]);
+  }
+  USE_SERIAL.println();
+  for (int i = 0; i < 5; i++) {
+    address4_uint[i] = address4[i];
+    USE_SERIAL.print(address4_uint[i]);
+  }
+  USE_SERIAL.println();
+  for (int i = 0; i < 5; i++) {
+    address5_uint[i] = address5[i];
+    USE_SERIAL.print(address5_uint[i]);
+  }
+  USE_SERIAL.println();
+  for (int i = 0; i < 5; i++) {
+    address6_uint[i] = address6[i];
+    USE_SERIAL.print(address6_uint[i]);
+  }
+  USE_SERIAL.println();
+  for (int i = 0; i < 5; i++) {
+    address7_uint[i] = address7[i];
+    USE_SERIAL.print(address7_uint[i]);
+  }
+  USE_SERIAL.println();
+  for (int i = 0; i < 5; i++) {
+    address8_uint[i] = address8[i];
+    USE_SERIAL.print(address8_uint[i]);
+  }
+  USE_SERIAL.println();
+  radio.openReadingPipe(0, address1_uint); // 파이프 주소 넘버 ,저장할 파이프 주소
+  radio.openReadingPipe(1, address2_uint);
+  radio.openReadingPipe(2, address3_uint); // 파이프 주소 넘버 ,저장할 파이프 주소
+  radio.openReadingPipe(3, address4_uint);
+  radio.openReadingPipe(4, address5_uint); // 파이프 주소 넘버 ,저장할 파이프 주소
+  radio.openReadingPipe(5, address6_uint);
+  radio.openReadingPipe(6, address7_uint); // 파이프 주소 넘버 ,저장할 파이프 주소
+  radio.openReadingPipe(7, address8_uint);
   if (address1 == "" || address2 == "" || address3 == "" || address4 == "" || address5 == "" || address6 == "" || address7 == "" || address8 == "")
   {
     USE_SERIAL.println("Pipe Address not defined.Default value.");
@@ -466,7 +520,7 @@ void loop()
       char trash_value[30];
       radio.read(trash_value, sizeof(trash_value));
     }
-    int onOff = text[0] - 49;
+    int onOff = text[0] - '0';
     String Data(&text[1]);
     int data;
     data = Data.toInt();
