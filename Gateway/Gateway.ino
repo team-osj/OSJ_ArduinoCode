@@ -524,12 +524,16 @@ void loop()
     String Data(&text[1]);
     int data;
     data = Data.toInt();
-    USE_SERIAL.println(data);
+    if(data < 'a'){
     update_state(data, onOff, 1);
     USE_SERIAL.print("onOff : ");
     USE_SERIAL.println(onOff);
     USE_SERIAL.print("data : ");
     USE_SERIAL.println(data);
+    }
+    else{
+      USE_SERIAL.println("notNumber");
+    }
     /*switch (data)
       {
       case 1:
