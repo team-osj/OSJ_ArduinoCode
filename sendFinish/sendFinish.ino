@@ -103,15 +103,17 @@ void setup() {
   address[5] = '\0';
   Serial.print("adress : ");
   Serial.println(EPR);
-  byte number = EEPROM.read(3);
-  int numberi = int(number);
-  Serial.print("number : ");
-  Serial.println(number);
-  //mode = digitalRead(modePin);
+  byte number1 = EEPROM.read(3);
+  byte number2 = EEPROM.read(4);
+  Serial.print("number1 : ");
+  Serial.println(number1);
+  Serial.print("number2 : ");
+  Serial.println(number2);
+  mode = digitalRead(modePin);
 }
 
 void loop() {
-  if (digitalRead(modePin)) {
+  if (mode) {
     RunningStatistics inputStats1;
     RunningStatistics inputStats2;
 
@@ -167,7 +169,7 @@ void loop() {
           radio.write(&text, sizeof(text));
 
           cnt1 = 0;
-          Serial.println(text);
+          Serial.println(&text[1]);
         }
         m1 = 1;
       }
@@ -187,7 +189,7 @@ void loop() {
           radio.write(&text, sizeof(text));
 
           cnt1 = 0;
-          Serial.println(text);
+          Serial.println(&text[1]);
         }
       }
 
@@ -250,9 +252,6 @@ int RFSET(String a) {
   String b = "RFSET";
   int result = a.compareTo(b);
   if (!result) {
-    
-
-
     String rf = inString.substring(dex1 + 1, end - 1);
     int rfi = rf.toInt();
     byte hiByte = highByte(rfi);
@@ -267,8 +266,8 @@ int RFSET(String a) {
       address[i] = eprs[i];
       Serial.print(address[i]);
     }
-    software_Reset();
     Serial.println();
+    software_Reset();
     return 1;
   }
 
@@ -361,16 +360,22 @@ int SETNUM(String a){
   int result = a.compareTo(b);
   if (!result) {
     dexc = inString.indexOf(',');
-    String onOff = inString.substring(dex1 + 1, dexc - 1);
+    String onOff = inString.substring(dex1 + 1, dexc);
     String number = inString.substring(dexc + 1, end);
-    char text[30] = {0};
-    text[0] = onOff[0];
+    //char text[30] = {0};
+    onOff.toCharArray(&text[0], onOff.length());
     number.toCharArray(&text[1], number.length());
     int numberi = number.toInt();
-    if(text == '1')
+    int onOffi = onOff.toInt();
+    if(onOffi == 1){
       EEPROM.write(3, numberi);
-    else if(text == '2')
+      Serial.print("insert1 : ");
+    }
+    else if(onOffi == 2)
+    {
       EEPROM.write(4, numberi);
+      Serial.print("insert2 : ");
+    }
     Serial.println(numberi);
     return 1;
   }
@@ -384,12 +389,14 @@ int NOWSTATE(String a){
     byte HIByte = EEPROM.read(1); // read(주소)
     byte LOByte = EEPROM.read(2); // read(주소)
     int EPR = word(HIByte, LOByte);
-    byte number = EEPROM.read(3);
-    int numberi = int(number);
     Serial.print("adress : ");
     Serial.println(EPR);
-    Serial.print("number : ");
-    Serial.println(number);
+    byte number1 = EEPROM.read(3);
+    byte number2 = EEPROM.read(4);
+    Serial.print("number1 : ");
+    Serial.println(number1);
+    Serial.print("number2 : ");
+    Serial.println(number2);
     return 1;
   }
   return 0;
