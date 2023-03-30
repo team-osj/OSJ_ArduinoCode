@@ -160,7 +160,10 @@ int SETNUM(String a){
     text[0] = onOff[0];
     number.toCharArray(&text[1], number.length());
     int numberi = number.toInt();
-    EEPROM.write(3, numberi);
+    if(text == '1')
+      EEPROM.write(3, numberi);
+    else if(text == '2')
+      EEPROM.write(4, numberi); 
     Serial.println(numberi);
     return 1;
   }

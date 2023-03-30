@@ -31,7 +31,7 @@ float Amps_TRMS2;
 RF24 radio(8, 10); //CE, SS
 uint8_t address[6] = {0}; //송신 주소
 char text[30];
-
+char rfa[30];
 // ============================================== millis()&if()
 unsigned long printPeriod = 500;
 unsigned long previousMillis = 0;
@@ -91,29 +91,32 @@ void setup() {
   sei(); //인터럽트 사용가능
   radio.begin(); //아두이노-RF모듈간 통신라인
   radio.setPALevel(RF24_PA_MAX);
-  radio.openWritingPipe(address); //송신하는 주소
+
   radio.stopListening();
 
   //================================================ EEPROM & debugMode
-  byte HIByte = EEPROM.read(1); // read(주소)
-  byte LOByte = EEPROM.read(2); // read(주소)
-  int EPR = word(HIByte, LOByte);
-  String EPRS = String(EPR);
-  for (int i = 0; i < 5; i++)  address[i] = EPRS[i];
+  for (int i = 0; i < 5; i++) {
+    address[i] = char(EEPROM.read((i + 1)));
+  }
+
+  Serial.print("address : ");
+  for (int i = 0; i < 5; i++) {
+    Serial.print(address[i]);
+  }
   address[5] = '\0';
-  Serial.print("adress : ");
-  Serial.println(EPR);
-  byte number1 = EEPROM.read(3);
-  byte number2 = EEPROM.read(4);
+  Serial.println();
+  byte number1 = EEPROM.read(6);
+  byte number2 = EEPROM.read(7);
   Serial.print("number1 : ");
   Serial.println(number1);
   Serial.print("number2 : ");
   Serial.println(number2);
   mode = digitalRead(modePin);
+  radio.openWritingPipe(address); //송신하는 주소
 }
 
 void loop() {
-  if (mode) {
+  if (!mode) {
     RunningStatistics inputStats1;
     RunningStatistics inputStats2;
 
@@ -161,7 +164,7 @@ void loop() {
 
       if (Amps_TRMS1 > 0.5 || WaterSensorData1  || l_hour1 > 100) {
         if (cnt1 == 1) {
-          byte number = EEPROM.read(3);
+          byte number = EEPROM.read(6);
           int numberi = int(number);
           String numbers = String(numberi);
           text[0] = '0';
@@ -181,7 +184,7 @@ void loop() {
         }
         else if (cnt1);
         else if (millis() - previousMillis_end1 >= endPeriod1) {
-          byte number = EEPROM.read(3);
+          byte number = EEPROM.read(7);
           int numberi = int(number);
           String numbers = String(numberi);
           text[0] = '1';
@@ -229,22 +232,22 @@ void loop() {
     }
   }
   //=======================================================================디버그 모드
-  else{
+  else {
     if (Serial.available()) {
-    inString = Serial.readStringUntil('\n');
-    dex = inString.indexOf('+');
-    dex1 = inString.indexOf('"');
+      inString = Serial.readStringUntil('\n');
+      dex = inString.indexOf('+');
+      dex1 = inString.indexOf('"');
 
-    end = inString.length();
-    String a = inString.substring(dex + 1, dex1);
-    if (RFSET(a));
-    else if (SENSDATA_START(a));
-    else if (RFSEND(a));
-    else if (SEND(a));
-    else if(SETNUM(a));
-    else if(NOWSTATE(a));
-    else Serial.println("unknown commend");
-  }
+      end = inString.length();
+      String a = inString.substring(dex + 1, dex1);
+      if (RFSET(a));
+      else if (SENSDATA_START(a));
+      else if (RFSEND(a));
+      else if (SEND(a));
+      else if (SETNUM(a));
+      else if (NOWSTATE(a));
+      else Serial.println("unknown commend");
+    }
   }
 }
 
@@ -252,21 +255,30 @@ int RFSET(String a) {
   String b = "RFSET";
   int result = a.compareTo(b);
   if (!result) {
+    Serial.print("AT+OK ");
     String rf = inString.substring(dex1 + 1, end - 1);
     int rfi = rf.toInt();
-    byte hiByte = highByte(rfi);
-    byte loByte = lowByte(rfi);
-    EEPROM.write(1, hiByte); // write(주소, 값)
-    EEPROM.write(2, loByte); // write(주소, 값)
-    byte HiByte = EEPROM.read(1); // read(주소)
-    byte LoByte = EEPROM.read(2); // read(주소)
-    int epr = word(HiByte, LoByte);
-    String eprs = String(epr);
-    for (int i = 0; i < 5; i++){
-      address[i] = eprs[i];
+    rf = rf + '0';
+    rfa[30] = {0};
+    rf.toCharArray(rfa, rf.length());
+    byte Byte1 = rf[0];
+    byte Byte2 = rf[1];
+    byte Byte3 = rf[2];
+    byte Byte4 = rf[3];
+    byte Byte5 = rf[4];
+    EEPROM.write(1, Byte1); // write(주소, 값)
+    EEPROM.write(2, Byte2); // write(주소, 값)
+    EEPROM.write(3, Byte3); // write(주소, 값)
+    EEPROM.write(4, Byte4); // write(주소, 값)
+    EEPROM.write(5, Byte5); // write(주소, 값)
+    for (int i = 0; i < 5; i++) {
+      address[i] = EEPROM.read((i + 1));
+    }
+    for (int i = 0; i < 5; i++) {
       Serial.print(address[i]);
     }
     Serial.println();
+    delay(100);
     software_Reset();
     return 1;
   }
@@ -281,6 +293,7 @@ int SENSDATA_START(String a) {
   String b = "SENSDATA_START";
   int result = a.compareTo(b);
   if (!result) {
+    Serial.print("AT+OK ");
     while (1) {
       if (Serial.available()) {
         inString = Serial.readStringUntil('\n');
@@ -327,6 +340,7 @@ int RFSEND(String a) {
   String b = "RFSEND";
   int result = a.compareTo(b);
   if (!result) {
+    Serial.print("AT+OK ");
     String rf = inString.substring(dex1 + 1, end);
     char text[30] = {0};
     rf.toCharArray(text, rf.length());
@@ -343,6 +357,7 @@ int SEND(String a) {
   String b = "SEND";
   int result = a.compareTo(b);
   if (!result) {
+    Serial.print("AT+OK ");
     String rf = inString.substring(dex1 + 1, end - 1);
     char text[30] = {0};
     rf.toCharArray(text, rf.length());
@@ -355,10 +370,11 @@ int SEND(String a) {
   }
 }
 
-int SETNUM(String a){
+int SETNUM(String a) {
   String b = "SETNUM";
   int result = a.compareTo(b);
   if (!result) {
+    Serial.print("AT+OK ");
     dexc = inString.indexOf(',');
     String onOff = inString.substring(dex1 + 1, dexc);
     String number = inString.substring(dexc + 1, end);
@@ -367,13 +383,13 @@ int SETNUM(String a){
     number.toCharArray(&text[1], number.length());
     int numberi = number.toInt();
     int onOffi = onOff.toInt();
-    if(onOffi == 1){
-      EEPROM.write(3, numberi);
+    if (onOffi == 1) {
+      EEPROM.write(6, numberi);
       Serial.print("insert1 : ");
     }
-    else if(onOffi == 2)
+    else if (onOffi == 2)
     {
-      EEPROM.write(4, numberi);
+      EEPROM.write(7, numberi);
       Serial.print("insert2 : ");
     }
     Serial.println(numberi);
@@ -382,17 +398,21 @@ int SETNUM(String a){
   return 0;
 }
 
-int NOWSTATE(String a){
+int NOWSTATE(String a) {
   String b = "NOWSTATE";
   int result = a.compareTo(b);
   if (!result) {
-    byte HIByte = EEPROM.read(1); // read(주소)
-    byte LOByte = EEPROM.read(2); // read(주소)
-    int EPR = word(HIByte, LOByte);
+    Serial.print("AT+OK ");
+    for (int i = 0; i < 5; i++) {
+      address[i] = EEPROM.read((i + 1));
+    }
     Serial.print("adress : ");
-    Serial.println(EPR);
-    byte number1 = EEPROM.read(3);
-    byte number2 = EEPROM.read(4);
+    for (int i = 0; i < 5; i++) {
+      Serial.print(address[i]);
+    }
+    Serial.println();
+    byte number1 = EEPROM.read(6);
+    byte number2 = EEPROM.read(7);
     Serial.print("number1 : ");
     Serial.println(number1);
     Serial.print("number2 : ");
@@ -402,6 +422,6 @@ int NOWSTATE(String a){
   return 0;
 }
 
-void software_Reset(){
+void software_Reset() {
   asm volatile(" jmp 0");
 }
