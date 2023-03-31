@@ -256,7 +256,7 @@ void loop()
           radio.write(&RadioData, sizeof(RadioData));
 
           cnt1 = 0;
-          ` Serial.println(RadioData);
+          Serial.println(RadioData);
         }
       }
     }
