@@ -28,8 +28,8 @@ void loop() {
     //RF무선모듈쪽으로 뭔가 수신된값이 존재한다면~
     char text[30];
     radio.read(text, sizeof(text));
-    Serial.print(pipe);
-    Serial.print(",");
+    //Serial.print(pipe);
+    //Serial.print(",");
     Serial.println(text);
     //String Data(text);
     //int data;

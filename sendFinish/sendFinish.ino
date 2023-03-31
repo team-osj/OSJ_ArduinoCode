@@ -70,6 +70,8 @@ void flow2() // 인터럽트 함수
   flow_frequency2++;
 }
 
+
+
 void setup()
 {
 
@@ -113,16 +115,16 @@ void setup()
   DeviceNum_1 = EEPROM.read(6);
   DeviceNum_2 = EEPROM.read(7);
   Serial.print("number1 : ");
-  Serial.println(number1);
+  Serial.println(DeviceNum_1);
   Serial.print("number2 : ");
-  Serial.println(number2);
+  Serial.println(DeviceNum_2);
   mode = digitalRead(modePin);
   radio.openWritingPipe(address); // 송신하는 주소
 }
 
 void loop()
 {
-  if (!mode)
+  if (mode)
   {
     RunningStatistics inputStats1;
     RunningStatistics inputStats2;
@@ -171,8 +173,12 @@ void loop()
         Serial.println();
       }
 
+
+      OnOffConfirmation(Amps_TRMS1, WaterSensorData1, l_hour1, cnt1, m1, previousMillis_end1, endPeriod1, DeviceNum_1, 1);
+      OnOffConfirmation(Amps_TRMS2, WaterSensorData2, l_hour2, cnt2, m2, previousMillis_end2, endPeriod2, DeviceNum_2, 2);
+      
       // 채널 1번
-      if (Amps_TRMS1 > 0.5 || WaterSensorData1 || l_hour1 > 100)
+      /*if (Amps_TRMS1 > 0.5 || WaterSensorData1 || l_hour1 > 100)
       {
         if (cnt1 == 1)
         {
@@ -206,7 +212,7 @@ void loop()
           int DeviceNum_1_int = int(DeviceNum_1);
           String DeviceNum_1_str = String(DeviceNum_1_int);
           RadioData[0] = '1';
-          DeviceNum_2_str.toCharArray(&RadioData[1], DeviceNum_1_str.length());
+          DeviceNum_1_str.toCharArray(&RadioData[1], DeviceNum_1_str.length());
           radio.write(&RadioData, sizeof(RadioData));
 
           cnt1 = 0;
@@ -228,7 +234,7 @@ void loop()
           DeviceNum_2_str.toCharArray(&RadioData[1], DeviceNum_2_str.length());
           radio.write(&RadioData, sizeof(RadioData));
 
-          cnt1 = 0;
+          cnt2 = 0;
           Serial.println(RadioData);
         }
         m2 = 1;
@@ -255,10 +261,10 @@ void loop()
           DeviceNum_2_str.toCharArray(&RadioData[1], DeviceNum_2_str.length());
           radio.write(&RadioData, sizeof(RadioData));
 
-          cnt1 = 0;
+          cnt2 = 0;
           Serial.println(RadioData);
-        }
-      }
+        }*/
+      //}
     }
   }
   //=======================================================================디버그 모드
@@ -489,4 +495,59 @@ int NOWSTATE(String command)
 void software_Reset()
 {
   asm volatile(" jmp 0");
+}
+
+void OnOffConfirmation(float Amps_TRMS, int WaterSensorData, unsigned int l_hour, int cnt, int m, unsigned long previousMillis_end, unsigned long endPeriod, byte DeviceNum, int ChannelNum) {
+  if (Amps_TRMS > 0.5 || WaterSensorData || l_hour > 100)
+  {
+    if (cnt == 1)
+    {
+      // byte number = EEPROM.read(4);
+      // int numberi = int(number);
+      // String numbers = String(numberi);
+      int DeviceNum_int = int(DeviceNum);
+      String DeviceNum_str = String(DeviceNum_int);
+      RadioData[0] = '0';
+      DeviceNum_str += '0';
+      DeviceNum_str.toCharArray(&RadioData[1], DeviceNum_str.length());
+      radio.write(&RadioData, sizeof(RadioData));
+      if (ChannelNum == 1)  cnt1 = 0;
+      if (ChannelNum == 2)  cnt2 = 0;
+      Serial.println(RadioData);
+    }
+    if (ChannelNum == 1)  m1 = 1;
+    if (ChannelNum == 2)  m2 = 1;
+  }
+  else
+  {
+    if (previousMillis_end > millis())
+      previousMillis_end = millis();
+    if (m)
+    {
+      if (ChannelNum == 1)  
+      previousMillis_end1 = millis();
+      if (ChannelNum == 2)  
+      previousMillis_end2 = millis();
+      if (ChannelNum == 1)  m1 = 0;
+      if (ChannelNum == 2)  m2 = 0;
+    }
+    else if (cnt)
+      ;
+    else if (millis() - previousMillis_end >= endPeriod)
+    {
+      // byte number = EEPROM.read(4);
+      // int numberi = int(number);
+      // String numbers = String(numberi);
+      int DeviceNum_int = int(DeviceNum);
+      String DeviceNum_str = String(DeviceNum_int);
+      RadioData[0] = '1';
+      DeviceNum_str += '0';
+      DeviceNum_str.toCharArray(&RadioData[1], DeviceNum_str.length());
+      radio.write(&RadioData, sizeof(RadioData));
+
+      if (ChannelNum == 1)  cnt1 = 1;
+      if (ChannelNum == 2)  cnt2 = 1;
+      Serial.println(RadioData);
+    }
+  }
 }
