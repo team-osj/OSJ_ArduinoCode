@@ -80,69 +80,69 @@ void socketIOEvent(socketIOmessageType_t type, uint8_t *payload, size_t length)
 {
   switch (type)
   {
-    case sIOtype_DISCONNECT:
-      USE_SERIAL.printf("[IOc] Disconnected!\n");
-      break;
-    case sIOtype_CONNECT:
-      USE_SERIAL.printf("[IOc] Connected to url: %s\n", payload);
+  case sIOtype_DISCONNECT:
+    USE_SERIAL.printf("[IOc] Disconnected!\n");
+    break;
+  case sIOtype_CONNECT:
+    USE_SERIAL.printf("[IOc] Connected to url: %s\n", payload);
 
-      // join default namespace (no auto join in Socket.IO V3)
-      socketIO.send(sIOtype_CONNECT, "/");
-      break;
-    case sIOtype_EVENT:
-      {
-        char *sptr = NULL;
-        int id = strtol((char *)payload, &sptr, 10);
-        USE_SERIAL.printf("[IOc] get event: %s id: %d\n", payload, id);
-        if (id)
-        {
-          payload = (uint8_t *)sptr;
-        }
-        DynamicJsonDocument doc(1024);
-        DeserializationError error = deserializeJson(doc, payload, length);
-        if (error)
-        {
-          USE_SERIAL.print(F("deserializeJson() failed: "));
-          USE_SERIAL.println(error.c_str());
-          return;
-        }
+    // join default namespace (no auto join in Socket.IO V3)
+    socketIO.send(sIOtype_CONNECT, "/");
+    break;
+  case sIOtype_EVENT:
+  {
+    char *sptr = NULL;
+    int id = strtol((char *)payload, &sptr, 10);
+    USE_SERIAL.printf("[IOc] get event: %s id: %d\n", payload, id);
+    if (id)
+    {
+      payload = (uint8_t *)sptr;
+    }
+    DynamicJsonDocument doc(1024);
+    DeserializationError error = deserializeJson(doc, payload, length);
+    if (error)
+    {
+      USE_SERIAL.print(F("deserializeJson() failed: "));
+      USE_SERIAL.println(error.c_str());
+      return;
+    }
 
-        String eventName = doc[0];
-        USE_SERIAL.printf("[IOc] event name: %s\n", eventName.c_str());
+    String eventName = doc[0];
+    USE_SERIAL.printf("[IOc] event name: %s\n", eventName.c_str());
 
-        // Message Includes a ID for a ACK (callback)
-        if (id)
-        {
-          // creat JSON message for Socket.IO (ack)
-          DynamicJsonDocument docOut(1024);
-          JsonArray array = docOut.to<JsonArray>();
+    // Message Includes a ID for a ACK (callback)
+    if (id)
+    {
+      // creat JSON message for Socket.IO (ack)
+      DynamicJsonDocument docOut(1024);
+      JsonArray array = docOut.to<JsonArray>();
 
-          // add payload (parameters) for the ack (callback function)
-          JsonObject param1 = array.createNestedObject();
-          param1["now"] = millis();
+      // add payload (parameters) for the ack (callback function)
+      JsonObject param1 = array.createNestedObject();
+      param1["now"] = millis();
 
-          // JSON to String (serializion)
-          String output;
-          output += id;
-          serializeJson(docOut, output);
+      // JSON to String (serializion)
+      String output;
+      output += id;
+      serializeJson(docOut, output);
 
-          // Send event
-          socketIO.send(sIOtype_ACK, output);
-        }
-      }
-      break;
-    case sIOtype_ACK:
-      USE_SERIAL.printf("[IOc] get ack: %u\n", length);
-      break;
-    case sIOtype_ERROR:
-      USE_SERIAL.printf("[IOc] get error: %u\n", length);
-      break;
-    case sIOtype_BINARY_EVENT:
-      USE_SERIAL.printf("[IOc] get binary: %u\n", length);
-      break;
-    case sIOtype_BINARY_ACK:
-      USE_SERIAL.printf("[IOc] get binary ack: %u\n", length);
-      break;
+      // Send event
+      socketIO.send(sIOtype_ACK, output);
+    }
+  }
+  break;
+  case sIOtype_ACK:
+    USE_SERIAL.printf("[IOc] get ack: %u\n", length);
+    break;
+  case sIOtype_ERROR:
+    USE_SERIAL.printf("[IOc] get error: %u\n", length);
+    break;
+  case sIOtype_BINARY_EVENT:
+    USE_SERIAL.printf("[IOc] get binary: %u\n", length);
+    break;
+  case sIOtype_BINARY_ACK:
+    USE_SERIAL.printf("[IOc] get binary ack: %u\n", length);
+    break;
   }
 }
 
@@ -250,15 +250,13 @@ bool initWiFi()
 
 void SettingPage()
 {
-  server.on("/", HTTP_GET, [](AsyncWebServerRequest * request)
-  {
-    request->send(SPIFFS, "/wifimanager.html", "text/html");
-  });
+  server.on("/", HTTP_GET, [](AsyncWebServerRequest *request)
+            { request->send(SPIFFS, "/wifimanager.html", "text/html"); });
 
   server.serveStatic("/", SPIFFS, "/");
 
-  server.on("/", HTTP_POST, [](AsyncWebServerRequest * request)
-  {
+  server.on("/", HTTP_POST, [](AsyncWebServerRequest *request)
+            {
     int params = request->params();
     for (int i = 0; i < params; i++) {
       AsyncWebParameter* p = request->getParam(i);
@@ -373,8 +371,7 @@ void SettingPage()
     }
     request->send(200, "text/plain", "Done. ESP will restart, connect to your router and go to IP address: " + ip);
     delay(3000);
-    ESP.restart();
-  });
+    ESP.restart(); });
   server.begin();
 }
 
@@ -385,7 +382,7 @@ void setup()
   Serial.begin(115200);
   radio.begin(); // 아두이노-RF모듈간 통신라인
   radio.setPALevel(RF24_PA_LOW);
-  
+
   radio.startListening();
   USE_SERIAL.setDebugOutput(true);
   initSPIFFS();
@@ -403,42 +400,50 @@ void setup()
   address6 = readFile(SPIFFS, addr6Path);
   address7 = readFile(SPIFFS, addr7Path);
   address8 = readFile(SPIFFS, addr8Path);
-  for (int i = 0; i < 5; i++) {
+  for (int i = 0; i < 5; i++)
+  {
     address1_uint[i] = address1[i];
     USE_SERIAL.print(address1_uint[i]);
   }
   USE_SERIAL.println();
-  for (int i = 0; i < 5; i++) {
+  for (int i = 0; i < 5; i++)
+  {
     address2_uint[i] = address2[i];
     USE_SERIAL.print(address2_uint[i]);
   }
   USE_SERIAL.println();
-  for (int i = 0; i < 5; i++) {
+  for (int i = 0; i < 5; i++)
+  {
     address3_uint[i] = address3[i];
     USE_SERIAL.print(address3_uint[i]);
   }
   USE_SERIAL.println();
-  for (int i = 0; i < 5; i++) {
+  for (int i = 0; i < 5; i++)
+  {
     address4_uint[i] = address4[i];
     USE_SERIAL.print(address4_uint[i]);
   }
   USE_SERIAL.println();
-  for (int i = 0; i < 5; i++) {
+  for (int i = 0; i < 5; i++)
+  {
     address5_uint[i] = address5[i];
     USE_SERIAL.print(address5_uint[i]);
   }
   USE_SERIAL.println();
-  for (int i = 0; i < 5; i++) {
+  for (int i = 0; i < 5; i++)
+  {
     address6_uint[i] = address6[i];
     USE_SERIAL.print(address6_uint[i]);
   }
   USE_SERIAL.println();
-  for (int i = 0; i < 5; i++) {
+  for (int i = 0; i < 5; i++)
+  {
     address7_uint[i] = address7[i];
     USE_SERIAL.print(address7_uint[i]);
   }
   USE_SERIAL.println();
-  for (int i = 0; i < 5; i++) {
+  for (int i = 0; i < 5; i++)
+  {
     address8_uint[i] = address8[i];
     USE_SERIAL.print(address8_uint[i]);
   }
@@ -513,26 +518,28 @@ void loop()
   byte pipe;
   if (radio.available(&pipe))
   {
-    char text[30];
-    radio.read(text, sizeof(text));
+    char RadioData[30];
+    radio.read(RadioData, sizeof(RadioData));
     while (radio.available(&pipe))
     {
-      char trash_value[30];
-      radio.read(trash_value, sizeof(trash_value));
+      char trash_val[30];
+      radio.read(trash_val, sizeof(trash_val));
     }
-    int onOff = text[0] - '0';
-    String Data(&text[1]);
-    int data;
-    data = Data.toInt();
-    if(data < 'a'){
-    update_state(data, onOff, 1);
-    USE_SERIAL.print("onOff : ");
-    USE_SERIAL.println(onOff);
-    USE_SERIAL.print("data : ");
-    USE_SERIAL.println(data);
+    int DeviceStatus = RadioData[0] - '0';
+    String DeviceNum_Str(&RadioData[1]);
+    int DeviceNum;
+    DeviceNum = DeviceNum_Str.toInt();
+    if (DeviceNum < 'a')
+    {
+      update_state(DeviceNum, DeviceStatus, 1);
+      USE_SERIAL.print("Status : ");
+      USE_SERIAL.println(DeviceStatus);
+      USE_SERIAL.print("DeviceNumber : ");
+      USE_SERIAL.println(DeviceNum);
     }
-    else{
-      USE_SERIAL.println("notNumber");
+    else
+    {
+      USE_SERIAL.println("ERROR:Wrong Number");
     }
     /*switch (data)
       {
