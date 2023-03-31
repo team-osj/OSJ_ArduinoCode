@@ -7,7 +7,9 @@
 #define ACS_Pin2 A1
 #define WaterSensorPin1 5
 #define WaterSensorPin2 6
-#define modePin 9
+#define modeDebugPin 9
+#define modeDryerPin1 8
+#define modeDryerPin2 7
 #define FlowSensorPin1 3
 #define FlowSensorPin2 2
 // #define ACS_LED1 4
@@ -40,12 +42,16 @@ unsigned long previousMillis = 0;
 unsigned long endPeriod1 = 65000;
 unsigned long previousMillis_end1 = 0;
 unsigned long endPeriod2 = 65000;
+unsigned long endPeriod_dryer1 = 5000;
+unsigned long endPeriod_dryer2 = 5000;
 unsigned long previousMillis_end2 = 0;
 int m1 = 0, m2 = 0;
 String SerialData;
 int dex, dex1, dexc, end;
 
-bool mode = false;
+bool mode_debug = false;
+bool mode_dryer1 = false;
+bool mode_dryer2 = false;
 
 int cnt1 = 1;
 int cnt2 = 1;
@@ -80,7 +86,9 @@ void setup()
   pinMode(ACS_Pin2, INPUT);
   pinMode(WaterSensorPin1, INPUT);
   pinMode(WaterSensorPin2, INPUT);
-  pinMode(modePin, INPUT_PULLUP);
+  pinMode(modeDebugPin, INPUT_PULLUP);
+  pinMode(modeDryerPin1, INPUT_PULLUP);
+  pinMode(modeDryerPin2, INPUT_PULLUP);
   // pinMode(ACS_LED1, OUTPUT);
   // pinMode(ACS_LED2, OUTPUT);
   // pinMode(water_LED1,OUTPUT);
@@ -118,13 +126,17 @@ void setup()
   Serial.println(DeviceNum_1);
   Serial.print("number2 : ");
   Serial.println(DeviceNum_2);
-  mode = digitalRead(modePin);
+  mode_debug = digitalRead(modeDebugPin);
+  mode_dryer1 = digitalRead(modeDryerPin1);
+  mode_dryer2 = digitalRead(modeDryerPin2);
+
+
   radio.openWritingPipe(address); // 송신하는 주소
 }
 
 void loop()
 {
-  if (mode)
+  if (mode_debug)
   {
     RunningStatistics inputStats1;
     RunningStatistics inputStats2;
@@ -173,13 +185,18 @@ void loop()
         Serial.println();
       }
 
+      if (mode_dryer1)
+        Status_Judgment(Amps_TRMS1, WaterSensorData1, l_hour1, cnt1, m1, previousMillis_end1, endPeriod1, DeviceNum_1, 1);
+      else
+        Dryer_Status_Judgment(Amps_TRMS1, cnt1, m1, DeviceNum_1,previousMillis_end1,endPeriod_dryer1, 1);
+      if (mode_dryer2)
+        Status_Judgment(Amps_TRMS2, WaterSensorData2, l_hour2, cnt2, m2, previousMillis_end2, endPeriod2, DeviceNum_2, 2);
+      else
+        Dryer_Status_Judgment(Amps_TRMS2, cnt2, m2, DeviceNum_2 ,previousMillis_end2,endPeriod_dryer2, 2);
 
-      OnOffConfirmation(Amps_TRMS1, WaterSensorData1, l_hour1, cnt1, m1, previousMillis_end1, endPeriod1, DeviceNum_1, 1);
-      OnOffConfirmation(Amps_TRMS2, WaterSensorData2, l_hour2, cnt2, m2, previousMillis_end2, endPeriod2, DeviceNum_2, 2);
-      
       // 채널 1번
       /*if (Amps_TRMS1 > 0.5 || WaterSensorData1 || l_hour1 > 100)
-      {
+        {
         if (cnt1 == 1)
         {
           // byte number = EEPROM.read(6);
@@ -193,9 +210,9 @@ void loop()
           Serial.println(&RadioData[1]);
         }
         m1 = 1;
-      }
-      else
-      {
+        }
+        else
+        {
         if (previousMillis_end1 > millis())
           previousMillis_end1 = millis();
         if (m1)
@@ -218,11 +235,11 @@ void loop()
           cnt1 = 0;
           Serial.println(&RadioData[1]);
         }
-      }
+        }
 
-      // 채널 2번
-      if (Amps_TRMS2 > 0.5 || WaterSensorData2 || l_hour2 > 100)
-      {
+        // 채널 2번
+        if (Amps_TRMS2 > 0.5 || WaterSensorData2 || l_hour2 > 100)
+        {
         if (cnt2 == 1)
         {
           // byte number = EEPROM.read(4);
@@ -238,9 +255,9 @@ void loop()
           Serial.println(RadioData);
         }
         m2 = 1;
-      }
-      else
-      {
+        }
+        else
+        {
         if (previousMillis_end2 > millis())
           previousMillis_end2 = millis();
         if (m2)
@@ -496,8 +513,62 @@ void software_Reset()
 {
   asm volatile(" jmp 0");
 }
+void Dryer_Status_Judgment(float Amps_TRMS, int cnt, int m, unsigned long previousMillis_end, unsigned long endPeriod, int DeviceNum, int ChannelNum) {
+  if (Amps_TRMS > 0.5)
+  {
+    if (cnt == 1)
+    {
+      // byte number = EEPROM.read(4);
+      // int numberi = int(number);
+      // String numbers = String(numberi);
+      int DeviceNum_int = int(DeviceNum);
+      String DeviceNum_str = String(DeviceNum_int);
+      RadioData[0] = '0';
+      DeviceNum_str += '0';
+      DeviceNum_str.toCharArray(&RadioData[1], DeviceNum_str.length());
+      radio.write(&RadioData, sizeof(RadioData));
+      if (ChannelNum == 1)  cnt1 = 0;
+      if (ChannelNum == 2)  cnt2 = 0;
+      Serial.println(RadioData);
+    }
+    if (ChannelNum == 1)  m1 = 1;
+    if (ChannelNum == 2)  m2 = 1;
+  }
+  else
+  {
+    if (previousMillis_end > millis())
+      previousMillis_end = millis();
+    if (m)
+    {
+      if (ChannelNum == 1)
+        previousMillis_end1 = millis();
+      if (ChannelNum == 2)
+        previousMillis_end2 = millis();
+      if (ChannelNum == 1)  m1 = 0;
+      if (ChannelNum == 2)  m2 = 0;
+    }
+    else if (cnt)
+      ;
+    else if (millis() - previousMillis_end >= endPeriod)
+    {
+      // byte number = EEPROM.read(4);
+      // int numberi = int(number);
+      // String numbers = String(numberi);
+      int DeviceNum_int = int(DeviceNum);
+      String DeviceNum_str = String(DeviceNum_int);
+      RadioData[0] = '1';
+      DeviceNum_str += '0';
+      DeviceNum_str.toCharArray(&RadioData[1], DeviceNum_str.length());
+      radio.write(&RadioData, sizeof(RadioData));
 
-void OnOffConfirmation(float Amps_TRMS, int WaterSensorData, unsigned int l_hour, int cnt, int m, unsigned long previousMillis_end, unsigned long endPeriod, byte DeviceNum, int ChannelNum) {
+      if (ChannelNum == 1)  cnt1 = 1;
+      if (ChannelNum == 2)  cnt2 = 1;
+      Serial.println(RadioData);
+    }
+  }
+
+}
+void Status_Judgment(float Amps_TRMS, int WaterSensorData, unsigned int l_hour, int cnt, int m, unsigned long previousMillis_end, unsigned long endPeriod, byte DeviceNum, int ChannelNum) {
   if (Amps_TRMS > 0.5 || WaterSensorData || l_hour > 100)
   {
     if (cnt == 1)
@@ -524,10 +595,10 @@ void OnOffConfirmation(float Amps_TRMS, int WaterSensorData, unsigned int l_hour
       previousMillis_end = millis();
     if (m)
     {
-      if (ChannelNum == 1)  
-      previousMillis_end1 = millis();
-      if (ChannelNum == 2)  
-      previousMillis_end2 = millis();
+      if (ChannelNum == 1)
+        previousMillis_end1 = millis();
+      if (ChannelNum == 2)
+        previousMillis_end2 = millis();
       if (ChannelNum == 1)  m1 = 0;
       if (ChannelNum == 2)  m2 = 0;
     }
