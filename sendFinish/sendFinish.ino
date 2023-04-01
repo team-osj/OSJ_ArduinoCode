@@ -189,7 +189,7 @@ void loop()
         Status_Judgment(Amps_TRMS1, WaterSensorData1, l_hour1, cnt1, m1, previousMillis_end1, endPeriod1, DeviceNum_1, 1);
       else
         Dryer_Status_Judgment(Amps_TRMS1, cnt1, m1, DeviceNum_1,previousMillis_end1,endPeriod_dryer1, 1);
-      if (mode_dryer2)
+      if (!mode_dryer2)
         Status_Judgment(Amps_TRMS2, WaterSensorData2, l_hour2, cnt2, m2, previousMillis_end2, endPeriod2, DeviceNum_2, 2);
       else
         Dryer_Status_Judgment(Amps_TRMS2, cnt2, m2, DeviceNum_2 ,previousMillis_end2,endPeriod_dryer2, 2);
@@ -513,7 +513,9 @@ void software_Reset()
 {
   asm volatile(" jmp 0");
 }
-void Dryer_Status_Judgment(float Amps_TRMS, int cnt, int m, unsigned long previousMillis_end, unsigned long endPeriod, int DeviceNum, int ChannelNum) {
+
+//=================================================================Status_Judgment모드
+void Dryer_Status_Judgment(float Amps_TRMS, int cnt, int m, int DeviceNum, unsigned long previousMillis_end, unsigned long endPeriod, int ChannelNum) {
   if (Amps_TRMS > 0.5)
   {
     if (cnt == 1)
