@@ -5,11 +5,11 @@
 
 #define ACS_Pin1 A0
 #define ACS_Pin2 A1
-#define WaterSensorPin1 5
-#define WaterSensorPin2 6
+#define DrainSensorPin1 5
+#define DrainSensorPin2 6
 #define modeDebugPin 9
-#define modeDryerPin1 8
-#define modeDryerPin2 7
+#define Ch1_Mode 8
+#define Ch2_Mode 7
 #define FlowSensorPin1 3
 #define FlowSensorPin2 2
 // #define ACS_LED1 4
@@ -39,11 +39,9 @@ byte DeviceNum_2;
 // ============================================== millis()&if()
 unsigned long printPeriod = 500;
 unsigned long previousMillis = 0;
-unsigned long endPeriod1 = 65000;
+unsigned long endPeriod = 120000;
 unsigned long previousMillis_end1 = 0;
-unsigned long endPeriod2 = 65000;
-unsigned long endPeriod_dryer1 = 5000;
-unsigned long endPeriod_dryer2 = 5000;
+unsigned long endPeriod_dryer = 10000;
 unsigned long previousMillis_end2 = 0;
 int m1 = 0, m2 = 0;
 String SerialData;
@@ -84,11 +82,11 @@ void setup()
   Serial.begin(115200);
   pinMode(ACS_Pin1, INPUT);
   pinMode(ACS_Pin2, INPUT);
-  pinMode(WaterSensorPin1, INPUT);
-  pinMode(WaterSensorPin2, INPUT);
+  pinMode(DrainSensorPin1, INPUT);
+  pinMode(DrainSensorPin2, INPUT);
   pinMode(modeDebugPin, INPUT_PULLUP);
-  pinMode(modeDryerPin1, INPUT_PULLUP);
-  pinMode(modeDryerPin2, INPUT_PULLUP);
+  pinMode(Ch1_Mode, INPUT_PULLUP);
+  pinMode(Ch2_Mode, INPUT_PULLUP);
   // pinMode(ACS_LED1, OUTPUT);
   // pinMode(ACS_LED2, OUTPUT);
   // pinMode(water_LED1,OUTPUT);
@@ -108,27 +106,11 @@ void setup()
   radio.stopListening();
 
   //================================================ EEPROM & debugMode
-  for (int i = 0; i < 5; i++)
-  {
-    address[i] = char(EEPROM.read((i + 1)));
-  }
 
-  Serial.print("address : ");
-  for (int i = 0; i < 5; i++)
-  {
-    Serial.print(address[i]);
-  }
-  address[5] = '\0';
-  Serial.println();
-  DeviceNum_1 = EEPROM.read(6);
-  DeviceNum_2 = EEPROM.read(7);
-  Serial.print("number1 : ");
-  Serial.println(DeviceNum_1);
-  Serial.print("number2 : ");
-  Serial.println(DeviceNum_2);
-  mode_debug = digitalRead(modeDebugPin);
-  mode_dryer1 = digitalRead(modeDryerPin1);
-  mode_dryer2 = digitalRead(modeDryerPin2);
+  SetDefaultVal();
+  mode_debug = 1;//digitalRead(modeDebugPin);
+  mode_dryer1 = 0;//digitalRead(Ch1_Mode);
+  mode_dryer2 = 1;//digitalRead(Ch2_Mode);
 
 
   radio.openWritingPipe(address); // 송신하는 주소
@@ -160,8 +142,8 @@ void loop()
       {
         previousMillis = millis();
 
-        WaterSensorData1 = digitalRead(WaterSensorPin1);
-        WaterSensorData2 = digitalRead(WaterSensorPin2);
+        WaterSensorData1 = 0;//digitalRead(DrainSensorPin1);
+        WaterSensorData2 = 0;//digitalRead(DrainSensorPin2);
 
         l_hour1 = (flow_frequency1 * 60 / 7.5); // L/hour계산
         l_hour2 = (flow_frequency2 * 60 / 7.5);
@@ -186,102 +168,17 @@ void loop()
       }
 
       if (mode_dryer1)
-        Status_Judgment(Amps_TRMS1, WaterSensorData1, l_hour1, cnt1, m1, previousMillis_end1, endPeriod1, DeviceNum_1, 1);
+        Status_Judgment(Amps_TRMS1, WaterSensorData1, l_hour1, cnt1, m1, previousMillis_end1, DeviceNum_1, 1);
       else
-        Dryer_Status_Judgment(Amps_TRMS1, cnt1, m1, DeviceNum_1,previousMillis_end1,endPeriod_dryer1, 1);
-      if (!mode_dryer2)
-        Status_Judgment(Amps_TRMS2, WaterSensorData2, l_hour2, cnt2, m2, previousMillis_end2, endPeriod2, DeviceNum_2, 2);
+        Dryer_Status_Judgment(Amps_TRMS1, cnt1, m1, DeviceNum_1, previousMillis_end1, 1);
+
+
+      if (mode_dryer2)
+        Status_Judgment(Amps_TRMS2, WaterSensorData2, l_hour2, cnt2, m2, previousMillis_end2, DeviceNum_2, 2);
       else
-        Dryer_Status_Judgment(Amps_TRMS2, cnt2, m2, DeviceNum_2 ,previousMillis_end2,endPeriod_dryer2, 2);
+        Dryer_Status_Judgment(Amps_TRMS2, cnt2, m2, DeviceNum_2 , previousMillis_end2, 2);
 
-      // 채널 1번
-      /*if (Amps_TRMS1 > 0.5 || WaterSensorData1 || l_hour1 > 100)
-        {
-        if (cnt1 == 1)
-        {
-          // byte number = EEPROM.read(6);
-          int DeviceNum_1_int = int(DeviceNum_1);
-          String DeviceNum_1_str = String(DeviceNum_1_int);
-          RadioData[0] = '0';
-          DeviceNum_1_str.toCharArray(&RadioData[1], DeviceNum_1_str.length());
-          radio.write(&RadioData, sizeof(RadioData));
-
-          cnt1 = 0;
-          Serial.println(&RadioData[1]);
-        }
-        m1 = 1;
-        }
-        else
-        {
-        if (previousMillis_end1 > millis())
-          previousMillis_end1 = millis();
-        if (m1)
-        {
-          previousMillis_end1 = millis();
-          m1 = 0;
-        }
-        else if (cnt1)
-          ;
-        else if (millis() - previousMillis_end1 >= endPeriod1)
-        {
-          // byte number = EEPROM.read(7);
-          // int numberi = int(number);
-          int DeviceNum_1_int = int(DeviceNum_1);
-          String DeviceNum_1_str = String(DeviceNum_1_int);
-          RadioData[0] = '1';
-          DeviceNum_1_str.toCharArray(&RadioData[1], DeviceNum_1_str.length());
-          radio.write(&RadioData, sizeof(RadioData));
-
-          cnt1 = 0;
-          Serial.println(&RadioData[1]);
-        }
-        }
-
-        // 채널 2번
-        if (Amps_TRMS2 > 0.5 || WaterSensorData2 || l_hour2 > 100)
-        {
-        if (cnt2 == 1)
-        {
-          // byte number = EEPROM.read(4);
-          // int numberi = int(number);
-          // String numbers = String(numberi);
-          int DeviceNum_2_int = int(DeviceNum_2);
-          String DeviceNum_2_str = String(DeviceNum_2_int);
-          RadioData[0] = '0';
-          DeviceNum_2_str.toCharArray(&RadioData[1], DeviceNum_2_str.length());
-          radio.write(&RadioData, sizeof(RadioData));
-
-          cnt2 = 0;
-          Serial.println(RadioData);
-        }
-        m2 = 1;
-        }
-        else
-        {
-        if (previousMillis_end2 > millis())
-          previousMillis_end2 = millis();
-        if (m2)
-        {
-          previousMillis_end2 = millis();
-          m2 = 0;
-        }
-        else if (cnt2)
-          ;
-        else if (millis() - previousMillis_end2 >= endPeriod2)
-        {
-          // byte number = EEPROM.read(4);
-          // int numberi = int(number);
-          // String numbers = String(numberi);
-          int DeviceNum_2_int = int(DeviceNum_2);
-          String DeviceNum_2_str = String(DeviceNum_2_int);
-          RadioData[0] = '1';
-          DeviceNum_2_str.toCharArray(&RadioData[1], DeviceNum_2_str.length());
-          radio.write(&RadioData, sizeof(RadioData));
-
-          cnt2 = 0;
-          Serial.println(RadioData);
-        }*/
-      //}
+      
     }
   }
   //=======================================================================디버그 모드
@@ -307,6 +204,8 @@ void loop()
         ;
       else if (NOWSTATE(AT_Command))
         ;
+      else if (SETDEL_WSH(AT_Command))
+        ;
       else
         Serial.println("ERROR:Unknown command");
     }
@@ -315,23 +214,11 @@ void loop()
 
 int RFSET(String command)
 {
-  // String b = "RFSET";
-  // int result = command.compareTo(b);
   if (!(command.compareTo("RFSET")))
   {
     Serial.print("AT+OK ");
     String rf = SerialData.substring(dex1 + 1, end - 1);
     rf = rf + '0';
-    // byte Byte1 = rf[0];
-    // byte Byte2 = rf[1];
-    // byte Byte3 = rf[2];
-    // byte Byte4 = rf[3];
-    // byte Byte5 = rf[4];
-    // EEPROM.write(1, Byte1); // write(주소, 값)
-    // EEPROM.write(2, Byte2); // write(주소, 값)
-    // EEPROM.write(3, Byte3); // write(주소, 값)
-    // EEPROM.write(4, Byte4); // write(주소, 값)
-    // EEPROM.write(5, Byte5); // write(주소, 값)
     for (int i = 0; i < 5; i++)
     {
       EEPROM.write(i + 1, rf[i]);
@@ -359,11 +246,15 @@ int RFSET(String command)
 int SENSDATA_START(String command)
 {
   int cnt = 0;
-  // String b = "SENSDATA_START";
-  // int result = command.compareTo(b);
+  int num = 0;
   if (!(command.compareTo("SENSDATA_START")))
   {
-    Serial.print("AT+OK ");
+    Serial.println("AT+OK SENSDATA_START");
+    Serial.println("Waiting for 30 sec...");
+    Serial.println("CLOSE SERIAL PORT AND OPEN EXCEL LOG PROGRAM");
+    delay(30000);
+    Serial.println("CLEARDATA"); //처음에 데이터 리셋
+    Serial.println("LABEL,No.,AMP1,Drain1,L/h1,AMP2,Drain2,L/h2"); //엑셀 첫행 데이터 이름 설정
     while (1)
     {
       if (Serial.available())
@@ -373,10 +264,6 @@ int SENSDATA_START(String command)
         dex1 = SerialData.indexOf('"');
         end = SerialData.length();
         command = SerialData.substring(dex + 1, dex1);
-        // String c = "SENSDATA_END";
-        // if (!(command.compareTo(c))) {
-        //   break;
-        // }
         if (!(command.compareTo("SENSDATA_END")))
         {
           break;
@@ -385,21 +272,24 @@ int SENSDATA_START(String command)
 
       if (cnt >= 500)
       {
+        num++;
         cnt = 0;
-        Serial.print("ACS1 : ");
-        Serial.println(Amps_TRMS1);
-        Serial.print("Water1 : ");
-        Serial.println(WaterSensorData1);
-        Serial.print("L/h1 : ");
-        Serial.println(l_hour1);
-        Serial.print("ACS2 : ");
-        Serial.println(Amps_TRMS2);
-        Serial.print("Water2 : ");
-        Serial.println(WaterSensorData2);
-        Serial.print("L/h2 : ");
-        Serial.println(l_hour2);
-        Serial.print("Time : ");
-        Serial.println(millis());
+        Serial.print("DATA,");
+        Serial.print(num);
+        Serial.print(",");
+        Serial.print(Amps_TRMS1);
+        Serial.print(",");
+        Serial.print(WaterSensorData1);
+        Serial.print(",");
+        Serial.print(l_hour1);
+        Serial.print(",");
+        Serial.print(Amps_TRMS2);
+        Serial.print(",");
+        Serial.print(WaterSensorData2);
+        Serial.print(",");
+        Serial.print(l_hour2);
+        //Serial.print("Time : ");
+        //Serial.println(millis());
         Serial.println();
       }
       cnt++;
@@ -416,8 +306,6 @@ int SENSDATA_START(String command)
 
 int RFSEND(String command)
 {
-  // String b = "RFSEND";
-  // int result = command.compareTo(b);
   if (!(command.compareTo("RFSEND")))
   {
     Serial.print("AT+OK ");
@@ -436,8 +324,6 @@ int RFSEND(String command)
 
 int UPDATE(String command)
 {
-  // String b = "SEND";
-  // int result = command.compareTo(b);
   if (!(command.compareTo("UPDATE")))
   {
     Serial.print("AT+OK ");
@@ -455,8 +341,6 @@ int UPDATE(String command)
 
 int SETNUM(String command)
 {
-  // String b = "SETNUM";
-  // int result = command.compareTo(b);
   if (!(command.compareTo("SETNUM")))
   {
     Serial.print("AT+OK ");
@@ -481,10 +365,48 @@ int SETNUM(String command)
   return 0;
 }
 
+int SETDEL_WSH(String command)
+{
+  if (!(command.compareTo("SETDEL_WSH")))
+  {
+    Serial.print("AT+OK ");
+    String Time = SerialData.substring(dex1 + 1, end);
+    int Time_int = Time.toInt();
+    if (Time_int < 255) {
+      EEPROM.write(8, Time_int);
+      Serial.print("TimeSet : ");
+      Serial.println(Time_int);
+    }
+    else {
+      Serial.println("OverFlow");
+    }
+    return 1;
+  }
+  return 0;
+}
+
+int SETDEL_DRY(String command)
+{
+  if (!(command.compareTo("SETDEL_DRY")))
+  {
+    Serial.print("AT+OK ");
+    String Time = SerialData.substring(dex1 + 1, end);
+    int Time_int = Time.toInt();
+    if (Time_int < 255) {
+      EEPROM.write(9, Time_int);
+      Serial.print("TimeSet : ");
+      Serial.println(Time_int);
+    }
+    else {
+      Serial.println("OverFlow");
+    }
+    return 1;
+  }
+  return 0;
+}
+
 int NOWSTATE(String command)
 {
-  // String b = "NOWSTATE";
-  // int result = command.compareTo(b);
   if (!(command.compareTo("NOWSTATE")))
   {
     Serial.print("AT+OK ");
@@ -498,8 +420,6 @@ int NOWSTATE(String command)
       Serial.print(address[i]);
     }
     Serial.println();
-    // byte number1 = EEPROM.read(6);
-    // byte number2 = EEPROM.read(7);
     Serial.print("DeviceNumber1 : ");
     Serial.println(DeviceNum_1);
     Serial.print("DeviceNumber2 : ");
@@ -515,14 +435,11 @@ void software_Reset()
 }
 
 //=================================================================Status_Judgment모드
-void Dryer_Status_Judgment(float Amps_TRMS, int cnt, int m, int DeviceNum, unsigned long previousMillis_end, unsigned long endPeriod, int ChannelNum) {
+void Dryer_Status_Judgment(float Amps_TRMS, int cnt, int m, int DeviceNum, unsigned long previousMillis_end, int ChannelNum) {
   if (Amps_TRMS > 0.5)
   {
     if (cnt == 1)
     {
-      // byte number = EEPROM.read(4);
-      // int numberi = int(number);
-      // String numbers = String(numberi);
       int DeviceNum_int = int(DeviceNum);
       String DeviceNum_str = String(DeviceNum_int);
       RadioData[0] = '0';
@@ -551,11 +468,8 @@ void Dryer_Status_Judgment(float Amps_TRMS, int cnt, int m, int DeviceNum, unsig
     }
     else if (cnt)
       ;
-    else if (millis() - previousMillis_end >= endPeriod)
+    else if (millis() - previousMillis_end >= endPeriod_dryer)
     {
-      // byte number = EEPROM.read(4);
-      // int numberi = int(number);
-      // String numbers = String(numberi);
       int DeviceNum_int = int(DeviceNum);
       String DeviceNum_str = String(DeviceNum_int);
       RadioData[0] = '1';
@@ -570,14 +484,11 @@ void Dryer_Status_Judgment(float Amps_TRMS, int cnt, int m, int DeviceNum, unsig
   }
 
 }
-void Status_Judgment(float Amps_TRMS, int WaterSensorData, unsigned int l_hour, int cnt, int m, unsigned long previousMillis_end, unsigned long endPeriod, byte DeviceNum, int ChannelNum) {
+void Status_Judgment(float Amps_TRMS, int WaterSensorData, unsigned int l_hour, int cnt, int m, unsigned long previousMillis_end, byte DeviceNum, int ChannelNum) {
   if (Amps_TRMS > 0.5 || WaterSensorData || l_hour > 100)
   {
     if (cnt == 1)
     {
-      // byte number = EEPROM.read(4);
-      // int numberi = int(number);
-      // String numbers = String(numberi);
       int DeviceNum_int = int(DeviceNum);
       String DeviceNum_str = String(DeviceNum_int);
       RadioData[0] = '0';
@@ -608,9 +519,6 @@ void Status_Judgment(float Amps_TRMS, int WaterSensorData, unsigned int l_hour, 
       ;
     else if (millis() - previousMillis_end >= endPeriod)
     {
-      // byte number = EEPROM.read(4);
-      // int numberi = int(number);
-      // String numbers = String(numberi);
       int DeviceNum_int = int(DeviceNum);
       String DeviceNum_str = String(DeviceNum_int);
       RadioData[0] = '1';
@@ -623,4 +531,36 @@ void Status_Judgment(float Amps_TRMS, int WaterSensorData, unsigned int l_hour, 
       Serial.println(RadioData);
     }
   }
+}
+
+void SetDefaultVal() {
+  for (int i = 0; i < 5; i++)
+  {
+    address[i] = char(EEPROM.read((i + 1)));
+    if(address[i] < '0') address[i] = '0';
+  }
+
+  Serial.print("address : ");
+  for (int i = 0; i < 5; i++)
+  {
+    Serial.print(address[i]);
+  }
+  address[5] = '\0';
+  Serial.println();
+  DeviceNum_1 = EEPROM.read(6);
+  if(DeviceNum_1 < 0) DeviceNum_1 = 1;
+  DeviceNum_2 = EEPROM.read(7);
+  if(DeviceNum_2 < 0) DeviceNum_2 = 2;
+  Serial.print("number1 : ");
+  Serial.println(DeviceNum_1);
+  Serial.print("number2 : ");
+  Serial.println(DeviceNum_2);
+  endPeriod = EEPROM.read(8) * 10000;
+  if (endPeriod > 2540000 && endPeriod <= 0) endPeriod = 120000;
+  endPeriod_dryer = EEPROM.read(9) * 1000;
+  if (endPeriod_dryer > 254000 && endPeriod_dryer <= 0) endPeriod_dryer = 10000;
+  Serial.print("Time_WSH : ");
+  Serial.println(endPeriod);
+  Serial.print("Time_DRY : ");
+  Serial.println(endPeriod_dryer);
 }
