@@ -109,7 +109,7 @@ void setup()
 
   SetDefaultVal();
   mode_debug = 1;//digitalRead(modeDebugPin);
-  mode_dryer1 = 0;//digitalRead(Ch1_Mode);
+  mode_dryer1 = 1;//digitalRead(Ch1_Mode);
   mode_dryer2 = 1;//digitalRead(Ch2_Mode);
 
 
@@ -142,8 +142,8 @@ void loop()
       {
         previousMillis = millis();
 
-        WaterSensorData1 = 0;//digitalRead(DrainSensorPin1);
-        WaterSensorData2 = 0;//digitalRead(DrainSensorPin2);
+        WaterSensorData1 = digitalRead(DrainSensorPin1);
+        WaterSensorData2 = digitalRead(DrainSensorPin2);
 
         l_hour1 = (flow_frequency1 * 60 / 7.5); // L/hour계산
         l_hour2 = (flow_frequency2 * 60 / 7.5);
@@ -255,6 +255,11 @@ int SENSDATA_START(String command)
     delay(30000);
     Serial.println("CLEARDATA"); //처음에 데이터 리셋
     Serial.println("LABEL,No.,AMP1,Drain1,L/h1,AMP2,Drain2,L/h2"); //엑셀 첫행 데이터 이름 설정
+    RunningStatistics inputStats1;
+    RunningStatistics inputStats2;
+
+    inputStats1.setWindowSecs(windowLength);
+    inputStats2.setWindowSecs(windowLength);
     while (1)
     {
       if (Serial.available())
@@ -272,6 +277,23 @@ int SENSDATA_START(String command)
 
       if (cnt >= 500)
       {
+        ACS_Value1 = analogRead(ACS_Pin1);
+        ACS_Value2 = analogRead(ACS_Pin2);
+
+        inputStats1.input(ACS_Value1);
+        inputStats2.input(ACS_Value2);
+
+        Amps_TRMS1 = intercept + slope * inputStats1.sigma();
+        Amps_TRMS2 = intercept + slope * inputStats2.sigma();
+        
+        WaterSensorData1 = digitalRead(DrainSensorPin1);
+        WaterSensorData2 = digitalRead(DrainSensorPin2);
+        
+        l_hour1 = (flow_frequency1 * 60 / 7.5);
+        l_hour2 = (flow_frequency2 * 60 / 7.5);
+
+        flow_frequency1 = 0;
+        flow_frequency2 = 0;
         num++;
         cnt = 0;
         Serial.print("DATA,");
@@ -485,7 +507,7 @@ void Dryer_Status_Judgment(float Amps_TRMS, int cnt, int m, int DeviceNum, unsig
 
 }
 void Status_Judgment(float Amps_TRMS, int WaterSensorData, unsigned int l_hour, int cnt, int m, unsigned long previousMillis_end, byte DeviceNum, int ChannelNum) {
-  if (Amps_TRMS > 0.5 || WaterSensorData || l_hour > 100)
+  if (Amps_TRMS > 0.5 || WaterSensorData || l_hour > 500)
   {
     if (cnt == 1)
     {
@@ -556,7 +578,7 @@ void SetDefaultVal() {
   Serial.print("number2 : ");
   Serial.println(DeviceNum_2);
   endPeriod = EEPROM.read(8) * 10000;
-  if (endPeriod > 2540000 && endPeriod <= 0) endPeriod = 120000;
+  if (endPeriod > 2540000 && endPeriod <= 0) endPeriod = 100000;
   endPeriod_dryer = EEPROM.read(9) * 1000;
   if (endPeriod_dryer > 254000 && endPeriod_dryer <= 0) endPeriod_dryer = 10000;
   Serial.print("Time_WSH : ");
