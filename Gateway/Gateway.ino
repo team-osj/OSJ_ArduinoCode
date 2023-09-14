@@ -381,7 +381,8 @@ void setup()
   radio.begin();
   Serial.begin(115200);
   radio.begin(); // 아두이노-RF모듈간 통신라인
-  radio.setPALevel(RF24_PA_LOW);
+  radio.setChannel(103); // 간섭 방지용 채널 변경
+  radio.setPALevel(RF24_PA_MAX);
 
   radio.startListening();
   USE_SERIAL.setDebugOutput(true);
@@ -531,11 +532,11 @@ void loop()
     DeviceNum = DeviceNum_Str.toInt();
     if (DeviceNum < 'a')
     {
-      update_state(DeviceNum, DeviceStatus, 1);
+      update_state(DeviceNum_Str, DeviceStatus, 1);
       USE_SERIAL.print("Status : ");
       USE_SERIAL.println(DeviceStatus);
       USE_SERIAL.print("DeviceNumber : ");
-      USE_SERIAL.println(DeviceNum);
+      USE_SERIAL.println(DeviceNum_Str);
     }
     else
     {

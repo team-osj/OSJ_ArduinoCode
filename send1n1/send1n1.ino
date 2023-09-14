@@ -1,5 +1,6 @@
 #include <SPI.h>
 #include "RF24.h"
+#include "printf.h"
 #define ACS712 A1
 
 char toggle = '0';
@@ -7,17 +8,20 @@ int readValue;
 
 RF24 radio(8, 10); // CE : 8, CSN : 10
 
-byte address[6] = "11111"; //5 byte
+byte address[6] = "10002"; //5 byte
 
 void setup() {
   pinMode(ACS712, INPUT);
-  Serial.begin(9600);
+  Serial.begin(115200);
+  printf_begin();
   radio.begin();
-
-  radio.setPALevel(RF24_PA_LOW);
+  radio.setChannel(103);
+  radio.printDetails();
+  radio.setPALevel(RF24_PA_MAX);
 
   radio.openWritingPipe(address);
   radio.stopListening();
+  
 
 }
 
@@ -37,7 +41,8 @@ void loop() {
     }
   }
   */
-  radio.write(&toggle, sizeof(toggle));
+  char ra[10] = "haha";
+  radio.write(&ra, sizeof(ra));
   delay(1000);
   
 }

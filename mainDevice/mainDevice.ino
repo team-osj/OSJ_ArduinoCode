@@ -1,30 +1,30 @@
 #include <Filters.h>
 #include <SPI.h>
 #include <EEPROM.h>
-#include <time.h>
-#include <stdlib.h>
 #include "RF24.h"
-#include <string.h>
 
-#define ACS_Pin1 A0
-#define ACS_Pin2 A1
-#define DrainSensorPin1 5
-#define DrainSensorPin2 6
+#define ACS_Pin1 A4
+#define ACS_Pin2 A5
+#define DrainSensorPin1 A3
+#define DrainSensorPin2 A2
 #define modeDebugPin 9
-#define Ch1_Mode 8
-#define Ch2_Mode 7
+#define Ch1_Mode A1
+#define Ch2_Mode A0
 #define FlowSensorPin1 3
 #define FlowSensorPin2 2
-//#define ser 5
-//#define rclk 6
-//#define srclk 7
+#define latchPin 6
+#define clockPin 7
+#define dataPin 5
 
-// #define ACS_LED1 4
-// #define ACS_LED2 5
-// #define water_LED1 6
-// #define water_LED2 7
-// #define flow_LED1 A4
-// #define flow_LED2 A5
+//---------------------------- LED_pin
+
+#define LED_FLOW1 5
+#define LED_FLOW2 4
+#define LED_DRAIN1 6
+#define LED_DRAIN2 3
+#define LED_Current1 7
+#define LED_Current2 4
+
 //=============================================== 전류측정
 float ACS_Value1;
 float ACS_Value2;
@@ -40,8 +40,6 @@ float Amps_TRMS2;
 RF24 radio(8, 10);        // CE, SS
 uint8_t address[6] = {0}; // 송신 주소
 char RadioData[30];
-char echoRadioData1[30];
-char echoRadioData2[30];
 char rfa[30];
 byte DeviceNum_1;
 byte DeviceNum_2;
@@ -54,10 +52,6 @@ unsigned long endPeriod;
 unsigned long previousMillis_end1 = 0;
 unsigned long endPeriod_dryer;
 unsigned long previousMillis_end2 = 0;
-unsigned long echoPeriod1 = 200;
-unsigned long echoPeriod2 = 200;
-unsigned long echoMillis1 = 0;
-unsigned long echoMillis2 = 0;
 
 int m1 = 0, m2 = 0;
 String SerialData;
@@ -70,8 +64,7 @@ bool mode_dryer2 = false;
 int cnt1 = 1;
 int cnt2 = 1;
 
-int echoFlag1 = 0;
-int echoFlag2 = 0;
+byte data;
 
 // ======================================= 비접촉수위센서
 int WaterSensorData1 = 0;
@@ -99,8 +92,6 @@ void flow2() // 인터럽트 함수
 void setup()
 {
 
-  srand((unsigned int)time(NULL));
-
   Serial.begin(115200);
   pinMode(ACS_Pin1, INPUT);
   pinMode(ACS_Pin2, INPUT);
@@ -123,7 +114,6 @@ void setup()
   attachInterrupt(1, flow2, RISING);
   sei();         // 인터럽트 사용가능
   radio.begin(); // 아두이노-RF모듈간 통신라인
-  radio.setChannel(103); // 간섭 방지용 채널 변경
   radio.setPALevel(RF24_PA_MAX);
 
   radio.stopListening();
@@ -150,6 +140,9 @@ void loop()
     inputStats2.setWindowSecs(windowLength);
     while (1)
     {
+
+
+
       ACS_Value1 = analogRead(ACS_Pin1);
       ACS_Value2 = analogRead(ACS_Pin2);
 
@@ -163,6 +156,63 @@ void loop()
         previousMillis = millis();
       if (millis() - previousMillis >= printPeriod)
       {
+        if (Amps_TRMS1 > 0.5) {
+          data = 0;
+          digitalWrite(latchPin, 0);
+          bitWrite(data, LED_Current1, 1);  // 비트를 하나씩 이동하면서 1을 쓴다
+
+          shiftOut(dataPin, clockPin, LSBFIRST, data); // 두번째 74hc595
+
+          digitalWrite(latchPin, 1);
+        }
+        if (Amps_TRMS2 > 0.5) {
+          data = 0;
+          digitalWrite(latchPin, 0);
+          bitWrite(data, LED_Current2, 1);  // 비트를 하나씩 이동하면서 1을 쓴다
+
+          shiftOut(dataPin, clockPin, LSBFIRST, data); // 두번째 74hc595
+
+          digitalWrite(latchPin, 1);
+        }
+        if (WaterSensorData1) {
+          
+          data = 0;
+          digitalWrite(latchPin, 0);
+          bitWrite(data, LED_DRAIN1, 1);  // 비트를 하나씩 이동하면서 1을 쓴다
+
+          shiftOut(dataPin, clockPin, LSBFIRST, data); // 두번째 74hc595
+
+          digitalWrite(latchPin, 1);
+        }
+        if (WaterSensorData2) {
+          data = 0;
+          digitalWrite(latchPin, 0);
+          bitWrite(data, LED_DRAIN2, 1);  // 비트를 하나씩 이동하면서 1을 쓴다
+
+          shiftOut(dataPin, clockPin, LSBFIRST, data); // 두번째 74hc595
+
+          digitalWrite(latchPin, 1);
+        }
+        if (l_hour1 > 500) {
+          
+          data = 0;
+          digitalWrite(latchPin, 0);
+          bitWrite(data, LED_FLOW1, 1);  // 비트를 하나씩 이동하면서 1을 쓴다
+
+          shiftOut(dataPin, clockPin, LSBFIRST, data); // 두번째 74hc595
+
+          digitalWrite(latchPin, 1);
+        }
+        if (l_hour2 > 500) {
+          data = 0;
+          digitalWrite(latchPin, 0);
+          bitWrite(data, LED_FLOW2, 1);  // 비트를 하나씩 이동하면서 1을 쓴다
+
+          shiftOut(dataPin, clockPin, LSBFIRST, data); // 두번째 74hc595
+
+          digitalWrite(latchPin, 1);
+        }
+
         previousMillis = millis();
 
         WaterSensorData1 = digitalRead(DrainSensorPin1);
@@ -201,18 +251,6 @@ void loop()
       else
         Dryer_Status_Judgment(Amps_TRMS2, cnt2, m2, DeviceNum_2 , previousMillis_end2, 2);
 
-      if (echoFlag1) {
-        if (millis() - echoMillis1 >= echoPeriod1) {
-          echoFlag1 = 0;
-          radio.write(&echoFlag1, sizeof(echoFlag1));
-        }
-      }
-      if (echoFlag2) {
-        if (millis() - echoMillis1 >= echoPeriod2) {
-          echoFlag2 = 0;
-          radio.write(&echoFlag2, sizeof(echoFlag2));
-        }
-      }
 
     }
   }
@@ -231,8 +269,6 @@ void loop()
         ;
       else if (SENSDATA_START(AT_Command))
         ;
-      //else if (NRFREAD_START(AT_Command))
-      // ;
       else if (RFSEND(AT_Command))
         ;
       else if (UPDATE(AT_Command))
@@ -494,51 +530,6 @@ int NOWSTATE(String command)
   return 0;
 }
 
-/*void NRFREAD_START(String command) {
-  int cnt = 0;
-  int num = 0;
-  if (!(command.compareTo("SENSDATA_START")))
-  {
-    int i = 0;
-    while (i < num_channels) {
-      Serial.print(i >> 4, HEX);
-      ++i;
-    }
-    Serial.println();
-    i = 0;
-    while (i < num_channels) {
-      Serial.print(i & 0xf, HEX);
-      ++i;
-    }
-    Serial.println();
-    const int num_reps = 100;
-    bool constCarrierMode = 0;
-    while (1)
-    {
-      if (Serial.available())
-      {
-        SerialData = Serial.readStringUntil('\n');
-        dex = SerialData.indexOf('+');
-        dex1 = SerialData.indexOf('"');
-        end = SerialData.length();
-        command = SerialData.substring(dex + 1, dex1);
-        if (!(command.compareTo("NRFREAD_END")))
-        {
-          break;
-        }
-      }
-
-      if (cnt >= 1000)
-      {
-
-      }
-      cnt++;
-      delay(1);
-    }
-    return 1;
-  }
-  }
-*/
 void software_Reset()
 {
   asm volatile(" jmp 0");
@@ -546,7 +537,7 @@ void software_Reset()
 
 //=================================================================Status_Judgment모드
 void Dryer_Status_Judgment(float Amps_TRMS, int cnt, int m, int DeviceNum, unsigned long previousMillis_end, int ChannelNum) {
-  if (Amps_TRMS > 0.3)
+  if (Amps_TRMS > 0.5)
   {
     if (cnt == 1)
     {
@@ -587,26 +578,14 @@ void Dryer_Status_Judgment(float Amps_TRMS, int cnt, int m, int DeviceNum, unsig
       DeviceNum_str.toCharArray(&RadioData[1], DeviceNum_str.length());
       radio.write(&RadioData, sizeof(RadioData));
 
-      if (ChannelNum == 1) {
-        cnt1 = 1;
-        echoFlag1 = 1;
-        echoPeriod1 = rand() % 300 + 200;
-        echoMillis1 = millis();
-        strcpy(echoRadioData1, RadioData);
-      }
-      if (ChannelNum == 2) {
-        cnt2 = 1;
-        echoFlag2 = 1;
-        echoPeriod2 = rand() % 300 + 200;
-        echoMillis2 = millis();
-        strcpy(echoRadioData2, RadioData);
-      }
+      if (ChannelNum == 1)  cnt1 = 1;
+      if (ChannelNum == 2)  cnt2 = 1;
       Serial.println(RadioData);
     }
   }
 }
 void Status_Judgment(float Amps_TRMS, int WaterSensorData, unsigned int l_hour, int cnt, int m, unsigned long previousMillis_end, byte DeviceNum, int ChannelNum) {
-  if (Amps_TRMS > 0.5 || WaterSensorData || l_hour > 50)
+  if (Amps_TRMS > 0.5 || WaterSensorData || l_hour > 500)
   {
     if (cnt == 1)
     {
@@ -646,27 +625,15 @@ void Status_Judgment(float Amps_TRMS, int WaterSensorData, unsigned int l_hour, 
       DeviceNum_str += '0';
       DeviceNum_str.toCharArray(&RadioData[1], DeviceNum_str.length());
       radio.write(&RadioData, sizeof(RadioData));
-      if (ChannelNum == 1) {
-        cnt1 = 1;
-        echoFlag1 = 1;
-        echoPeriod1 = rand() % 300 + 200;
-        echoMillis1 = millis();
-        strcpy(echoRadioData1, RadioData);
-      }
-      if (ChannelNum == 2) {
-        cnt2 = 1;
-        echoFlag2 = 1;
-        echoPeriod2 = rand() % 300 + 200;
-        echoMillis2 = millis();
-        strcpy(echoRadioData2, RadioData);
-      }
+
+      if (ChannelNum == 1)  cnt1 = 1;
+      if (ChannelNum == 2)  cnt2 = 1;
       Serial.println(RadioData);
     }
   }
 }
 
 void SetDefaultVal() {
-
   for (int i = 0; i < 5; i++)
   {
     address[i] = char(EEPROM.read((i + 1)));
@@ -680,19 +647,19 @@ void SetDefaultVal() {
   }
   address[5] = '\0';
   Serial.println();
-  DeviceNum_1 = 2;//EEPROM.read(7);
+  DeviceNum_1 = EEPROM.read(6);
   if (DeviceNum_1 < 0) DeviceNum_1 = 1;
-  DeviceNum_2 = 1;//EEPROM.read(6);
+  DeviceNum_2 = EEPROM.read(7);
   if (DeviceNum_2 < 0) DeviceNum_2 = 2;
   Serial.print("number1 : ");
   Serial.println(DeviceNum_1);
   Serial.print("number2 : ");
   Serial.println(DeviceNum_2);
   Serial.println(EEPROM.read(8));
-  endPeriod = EEPROM.read(8); //5000
+  endPeriod = EEPROM.read(8);
   endPeriod *=  10000;
   if (endPeriod > 2540000 && endPeriod <= 0) endPeriod = 100000;
-  endPeriod_dryer = EEPROM.read(9);//2000
+  endPeriod_dryer = EEPROM.read(9);
   endPeriod_dryer *= 1000;
   if (endPeriod_dryer > 254000 && endPeriod_dryer <= 0) endPeriod_dryer = 10000;
   Serial.print("Time_WSH : ");
