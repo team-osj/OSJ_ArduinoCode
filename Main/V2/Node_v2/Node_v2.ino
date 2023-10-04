@@ -15,9 +15,9 @@
 #define Ch2_Mode A3
 #define FlowSensorPin1 3
 #define FlowSensorPin2 2
-#define ser 5
-#define rclk 6
-#define srclk 7
+#define dataPin 5
+#define clockPin 6
+#define latchPin 7
 
 //=============================================== 전류측정
 float ACS_Value1;
@@ -83,12 +83,12 @@ unsigned int l_hour2;         // L/hour
 //---------------------------- LED_pin
 
 #define LED_FLOW1 5
-#define LED_FLOW2 4
+#define LED_FLOW2 2
 #define LED_DRAIN1 6
 #define LED_DRAIN2 3
 #define LED_Current1 7
 #define LED_Current2 4
-
+byte data;
 
 //======================================== 함수
 
@@ -117,10 +117,18 @@ void setup()
   pinMode(Ch2_Mode, INPUT_PULLUP);
   pinMode(FlowSensorPin1, INPUT);
   pinMode(FlowSensorPin2, INPUT);
+  pinMode(latchPin, OUTPUT);
+  pinMode(dataPin, OUTPUT);
+  pinMode(clockPin, OUTPUT);
   digitalWrite(FlowSensorPin1, HIGH); // 선택적 내부 풀업
   digitalWrite(FlowSensorPin2, HIGH);
   attachInterrupt(0, flow1, RISING); // 인터럽트(라이징)
   attachInterrupt(1, flow2, RISING);
+  for(int i = 0;i<9;i++){
+    digitalWrite(latchPin, LOW);
+    shiftOut(dataPin, clockPin, LSBFIRST, data);
+    digitalWrite(latchPin, HIGH);
+  }
   sei();         // 인터럽트 사용가능
   radio.begin(); // 아두이노-RF모듈간 통신라인
   radio.setChannel(103); // 간섭 방지용 채널 변경
@@ -164,61 +172,101 @@ void loop()
       if (millis() - previousMillis >= printPeriod)
       {
         if (Amps_TRMS1 > 0.5) {
-          data = 0;
           digitalWrite(latchPin, 0);
-          bitWrite(data, LED_Current1, 1);  // 비트를 하나씩 이동하면서 1을 쓴다
+          bitWrite(data, LED_Current1, 1); 
 
           shiftOut(dataPin, clockPin, LSBFIRST, data); 
 
           digitalWrite(latchPin, 1);
+          Serial.println("Amps1");
+        }
+        else{
+          digitalWrite(latchPin, 0);
+          bitWrite(data, LED_Current1, 0); 
+          shiftOut(dataPin, clockPin, LSBFIRST, data); 
+          digitalWrite(latchPin, 1);
+          Serial.println("AmpsNO1");
         }
         if (Amps_TRMS2 > 0.5) {
-          data = 0;
           digitalWrite(latchPin, 0);
-          bitWrite(data, LED_Current2, 1);  // 비트를 하나씩 이동하면서 1을 쓴다
+          bitWrite(data, LED_Current2, 1); 
 
           shiftOut(dataPin, clockPin, LSBFIRST, data); 
 
           digitalWrite(latchPin, 1);
+          Serial.println("Amps2");
         }
-        if (WaterSensorData1) {
-          
-          data = 0;
+        else{
           digitalWrite(latchPin, 0);
-          bitWrite(data, LED_DRAIN1, 1);  // 비트를 하나씩 이동하면서 1을 쓴다
+          bitWrite(data, LED_Current2, 0); 
+          shiftOut(dataPin, clockPin, LSBFIRST, data); 
+          digitalWrite(latchPin, 1);
+        }
+        if (!WaterSensorData1) {
+          digitalWrite(latchPin, 0);
+          bitWrite(data, LED_DRAIN1, 1); 
 
           shiftOut(dataPin, clockPin, LSBFIRST, data); 
 
+          digitalWrite(latchPin, 1);
+          Serial.println("Water1");
+        }
+        else{
+          digitalWrite(latchPin, 0);
+          bitWrite(data, LED_DRAIN1, 0); 
+          shiftOut(dataPin, clockPin, LSBFIRST, data); 
           digitalWrite(latchPin, 1);
         }
         if (WaterSensorData2) {
-          data = 0;
           digitalWrite(latchPin, 0);
-          bitWrite(data, LED_DRAIN2, 1);  // 비트를 하나씩 이동하면서 1을 쓴다
+          bitWrite(data, LED_DRAIN2, 1); 
 
           shiftOut(dataPin, clockPin, LSBFIRST, data); 
 
+          digitalWrite(latchPin, 1);
+          Serial.println("Water2");
+        }
+        else{
+          digitalWrite(latchPin, 0);
+          bitWrite(data, LED_DRAIN2, 0); 
+          shiftOut(dataPin, clockPin, LSBFIRST, data); 
           digitalWrite(latchPin, 1);
         }
         if (l_hour1 > 500) {
           
-          data = 0;
           digitalWrite(latchPin, 0);
-          bitWrite(data, LED_FLOW1, 1);  // 비트를 하나씩 이동하면서 1을 쓴다
+          bitWrite(data, LED_FLOW1, 1);
 
           shiftOut(dataPin, clockPin, LSBFIRST, data);
 
           digitalWrite(latchPin, 1);
+          Serial.println("hour1");
+        }
+        else{
+          digitalWrite(latchPin, 0);
+          bitWrite(data, LED_FLOW1, 0);
+          shiftOut(dataPin, clockPin, LSBFIRST, data); 
+          digitalWrite(latchPin, 1);
         }
         if (l_hour2 > 500) {
-          data = 0;
           digitalWrite(latchPin, 0);
-          bitWrite(data, LED_FLOW2, 1);  // 비트를 하나씩 이동하면서 1을 쓴다
+          bitWrite(data, LED_FLOW2, 1);  
 
           shiftOut(dataPin, clockPin, LSBFIRST, data); 
 
           digitalWrite(latchPin, 1);
+          Serial.println("hour2");
         }
+        else{
+          digitalWrite(latchPin, 0);
+          bitWrite(data, LED_FLOW2, 0);  
+          shiftOut(dataPin, clockPin, LSBFIRST, data); 
+          digitalWrite(latchPin, 1);
+        }
+        digitalWrite(latchPin, 0);
+        shiftOut(dataPin, clockPin, LSBFIRST, data); 
+        digitalWrite(latchPin, 1);
+        Serial.println(data);
         previousMillis = millis();
 
         WaterSensorData1 = digitalRead(DrainSensorPin1);
@@ -550,7 +598,7 @@ int NOWSTATE(String command)
   return 0;
 }
 
-void NRFREAD_START(String command) {
+int NRFREAD_START(String command) {
   int cnt = 0;
   int num = 0;
   if (!(command.compareTo("NRFREAD_START")))
