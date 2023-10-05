@@ -9,7 +9,7 @@ void setup() {
   radio.begin();
   radio.setChannel(103);
   radio.openReadingPipe(0, address);
-  radio.setPALevel(RF24_PA_LOW); //전원공급에 관한 파워레벨을 설정합니다. 모듈 사이가 가까우면 최소로 설정합니다.
+  radio.setPALevel(RF24_PA_MAX); //전원공급에 관한 파워레벨을 설정합니다. 모듈 사이가 가까우면 최소로 설정합니다.
 
 //거리가 가까운 순으로 RF24_PA_MIN / RF24_PA_LOW / RF24_PA_HIGH / RF24_PA_MAX 등으로 설정할 수 있습니다.
 
