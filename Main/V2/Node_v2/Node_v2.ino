@@ -55,6 +55,7 @@ unsigned long echoPeriod1 = 200;
 unsigned long echoPeriod2 = 200;
 unsigned long echoMillis1 = 0;
 unsigned long echoMillis2 = 0;
+unsigned long heartBeatMillis = 0;
 
 int m1 = 0, m2 = 0;
 String SerialData;
@@ -164,6 +165,12 @@ void loop()
 
       if (previousMillis > millis())
         previousMillis = millis();
+      if(millis() - heartBeatMillis >=300000){
+        heartBeatMillis = millis();
+        heartBeat(DeviceNum_1);
+        heartBeat(DeviceNum_2);
+        Serial.println("heartBeat");
+      }
       if (millis() - previousMillis >= printPeriod)
       {
         if (Amps_TRMS1 > 0.5) {
@@ -256,7 +263,7 @@ void loop()
       else
         Dryer_Status_Judgment(Amps_TRMS2, cnt2, m2, DeviceNum_2 , previousMillis_end2, 2);
 
-      if (echoFlag1) {
+      /*if (echoFlag1) {
         if (millis() - echoMillis1 >= echoPeriod1) {
           echoFlag1 = 0;
           radio.write(&echoFlag1, sizeof(echoFlag1));
@@ -267,7 +274,7 @@ void loop()
           echoFlag2 = 0;
           radio.write(&echoFlag2, sizeof(echoFlag2));
         }
-      }
+      }*/
 
     }
   }
@@ -764,6 +771,18 @@ void Status_Judgment(float Amps_TRMS, int WaterSensorData, unsigned int l_hour, 
       Serial.println(RadioData);
     }
   }
+}
+
+void heartBeat(int DeviceNum){
+  Serial.println("live!");
+  radio.powerUp();
+  int DeviceNum_int = int(DeviceNum);
+  String DeviceNum_str = String(DeviceNum_int);
+  RadioData[0] = '2';
+  DeviceNum_str += '0';
+  DeviceNum_str.toCharArray(&RadioData[1], DeviceNum_str.length());
+  radio.write(&RadioData, sizeof(RadioData));
+  radio.powerDown();
 }
 
 void SetDefaultVal() {
