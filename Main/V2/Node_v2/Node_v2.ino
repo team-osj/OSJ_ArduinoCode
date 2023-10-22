@@ -10,6 +10,7 @@
 #define ACS_Pin2 A5
 #define DrainSensorPin1 A0
 #define DrainSensorPin2 A1
+
 #define modeDebugPin 9
 #define Ch1_Mode A2
 #define Ch2_Mode A3
@@ -84,8 +85,8 @@ unsigned int l_hour2;         // L/hour
 
 //---------------------------- LED_pin
 
-#define LED_FLOW1 2
-#define LED_FLOW2 5
+#define LED_FLOW1 5
+#define LED_FLOW2 2
 #define LED_DRAIN1 1
 #define LED_DRAIN2 4
 #define LED_Current1 0
@@ -165,7 +166,7 @@ void loop()
 
       if (previousMillis > millis())
         previousMillis = millis();
-      if(millis() - heartBeatMillis >=300000){
+      if (millis() - heartBeatMillis >= 300000) {
         heartBeatMillis = millis();
         heartBeat(DeviceNum_1);
         heartBeat(DeviceNum_2);
@@ -173,58 +174,6 @@ void loop()
       }
       if (millis() - previousMillis >= printPeriod)
       {
-        if (Amps_TRMS1 > 0.5) {
-          bitWrite(data, LED_Current1, 1); 
-          Serial.println("Amps1");
-        }
-        else{
-          bitWrite(data, LED_Current1, 0);
-          Serial.println("AmpsNO1");
-        }
-        
-        if (Amps_TRMS2 > 0.5) {
-          bitWrite(data, LED_Current2, 1); 
-          Serial.println("Amps2");
-        }
-        else{
-          bitWrite(data, LED_Current2, 0); 
-        }
-        
-        if (WaterSensorData1) {
-          bitWrite(data, LED_DRAIN1, 1); 
-        }
-        else{
-          bitWrite(data, LED_DRAIN1, 0);
-        }
-        
-        if (WaterSensorData2) {
-          bitWrite(data, LED_DRAIN2, 1); 
-          Serial.println("Water2");
-        }
-        else{
-          bitWrite(data, LED_DRAIN2, 0);
-        }
-        
-        if (l_hour1 > 500) {
-          
-          bitWrite(data, LED_FLOW1, 1);
-          Serial.println("hour1");
-        }
-        else{
-          bitWrite(data, LED_FLOW1, 0);
-        }
-        
-        if (l_hour2 > 500) {
-          bitWrite(data, LED_FLOW2, 1);  
-          Serial.println("hour2");
-        }
-        else{
-          bitWrite(data, LED_FLOW2, 0);  
-        }
-        digitalWrite(latchPin, 0);
-        shiftOut(dataPin, clockPin, LSBFIRST, data); 
-        digitalWrite(latchPin, 1);
-        Serial.println(data);
         previousMillis = millis();
 
         WaterSensorData1 = digitalRead(DrainSensorPin1);
@@ -252,29 +201,82 @@ void loop()
         Serial.println();
       }
 
-      if (mode_dryer1)
+      if (Amps_TRMS1 > 0.5) {
+        bitWrite(data, LED_Current1, 1);
+        //Serial.println("Amps1");
+      }
+      else {
+        bitWrite(data, LED_Current1, 0);
+        //Serial.println("AmpsNO1");
+      }
+
+      if (Amps_TRMS2 > 0.5) {
+        bitWrite(data, LED_Current2, 1);
+        //Serial.println("Amps2");
+      }
+      else {
+        bitWrite(data, LED_Current2, 0);
+      }
+
+      if (mode_dryer1) {
+        if (WaterSensorData1) {
+          bitWrite(data, LED_DRAIN1, 1);
+        }
+        else {
+          bitWrite(data, LED_DRAIN1, 0);
+        }
+
+        if (l_hour1 > 500) {
+
+          bitWrite(data, LED_FLOW1, 1);
+          //Serial.println("hour1");
+        }
+        else {
+          bitWrite(data, LED_FLOW1, 0);
+        }
         Status_Judgment(Amps_TRMS1, WaterSensorData1, l_hour1, cnt1, m1, previousMillis_end1, DeviceNum_1, 1);
+      }
       else
         Dryer_Status_Judgment(Amps_TRMS1, cnt1, m1, DeviceNum_1, previousMillis_end1, 1);
 
 
-      if (mode_dryer2)
+      if (mode_dryer2) {
+        if (WaterSensorData2) {
+          bitWrite(data, LED_DRAIN2, 1);
+          //Serial.println("Water2");
+        }
+        else {
+          bitWrite(data, LED_DRAIN2, 0);
+        }
+        if (l_hour2 > 500) {
+          bitWrite(data, LED_FLOW2, 1);
+          //Serial.println("hour2");
+        }
+        else {
+          bitWrite(data, LED_FLOW2, 0);
+        }
         Status_Judgment(Amps_TRMS2, WaterSensorData2, l_hour2, cnt2, m2, previousMillis_end2, DeviceNum_2, 2);
+      }
       else
         Dryer_Status_Judgment(Amps_TRMS2, cnt2, m2, DeviceNum_2 , previousMillis_end2, 2);
+
+      digitalWrite(latchPin, 0);
+      shiftOut(dataPin, clockPin, LSBFIRST, data);
+      digitalWrite(latchPin, 1);
+      //Serial.println(data);
 
       /*if (echoFlag1) {
         if (millis() - echoMillis1 >= echoPeriod1) {
           echoFlag1 = 0;
           radio.write(&echoFlag1, sizeof(echoFlag1));
         }
-      }
-      if (echoFlag2) {
+        }
+        if (echoFlag2) {
         if (millis() - echoMillis1 >= echoPeriod2) {
           echoFlag2 = 0;
           radio.write(&echoFlag2, sizeof(echoFlag2));
         }
-      }*/
+        }*/
 
     }
   }
@@ -289,7 +291,7 @@ void loop()
       SerialData = Serial.readStringUntil('\n');
       dex = SerialData.indexOf('+');
       dex1 = SerialData.indexOf('"');
-      
+
       Serial.println(SerialData);
 
       end = SerialData.length();
@@ -300,7 +302,7 @@ void loop()
       else if (SENSDATA_START(AT_Command))
         ;
       else if (NRFREAD_START(AT_Command))
-         ;
+        ;
       else if (RFSEND(AT_Command))
         ;
       else if (UPDATE(AT_Command))
@@ -437,7 +439,7 @@ int SENSDATA_START(String command)
 
 int RFSEND(String command)
 {
-  
+
   Serial.println("RFSEND~");
   if (!(command.compareTo("RFSEND")))
   {
@@ -593,45 +595,45 @@ int NRFREAD_START(String command) {
 
       memset(values, 0, sizeof(values));
 
-    // Scan all channels num_reps times
-    int rep_counter = num_reps;
-    while (rep_counter--) {
-      int i = num_channels;
-      while (i--) {
-        // Select this channel
-        radio.setChannel(i);
+      // Scan all channels num_reps times
+      int rep_counter = num_reps;
+      while (rep_counter--) {
+        int i = num_channels;
+        while (i--) {
+          // Select this channel
+          radio.setChannel(i);
 
-        // Listen for a little
-        radio.startListening();
-        delayMicroseconds(128);
-        radio.stopListening();
+          // Listen for a little
+          radio.startListening();
+          delayMicroseconds(128);
+          radio.stopListening();
 
-        // Did we get a carrier?
-        if (radio.testCarrier()) {
-          ++values[i];
+          // Did we get a carrier?
+          if (radio.testCarrier()) {
+            ++values[i];
+          }
         }
       }
-    }
 
 
-    // Print out channel measurements, clamped to a single hex digit
-    int i = 0;
-    while (i < num_channels) {
-      if (values[i])
-        Serial.print(min(0xf, values[i]), HEX);
-      else
-        Serial.print(F("-"));
+      // Print out channel measurements, clamped to a single hex digit
+      int i = 0;
+      while (i < num_channels) {
+        if (values[i])
+          Serial.print(min(0xf, values[i]), HEX);
+        else
+          Serial.print(F("-"));
 
-      ++i;
-    }
-    Serial.println();
+        ++i;
+      }
+      Serial.println();
     }
     return 1;
   }
   return 0;
 }
 
-void radio_Init(){
+void radio_Init() {
   digitalWrite(nrf_ldo, HIGH);
   radio.begin(); // 아두이노-RF모듈간 통신라인
   radio.setChannel(103); // 간섭 방지용 채널 변경
@@ -773,7 +775,7 @@ void Status_Judgment(float Amps_TRMS, int WaterSensorData, unsigned int l_hour, 
   }
 }
 
-void heartBeat(int DeviceNum){
+void heartBeat(int DeviceNum) {
   Serial.println("live!");
   radio.powerUp();
   int DeviceNum_int = int(DeviceNum);
