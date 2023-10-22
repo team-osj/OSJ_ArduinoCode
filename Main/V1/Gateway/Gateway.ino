@@ -532,7 +532,7 @@ void loop()
     DeviceNum = DeviceNum_Str.toInt();
     if (DeviceNum < 'a')
     {
-      update_state(DeviceNum_Str, DeviceStatus, 1);
+      update_state(DeviceNum, DeviceStatus, 1);
       USE_SERIAL.print("Status : ");
       USE_SERIAL.println(DeviceStatus);
       USE_SERIAL.print("DeviceNumber : ");
