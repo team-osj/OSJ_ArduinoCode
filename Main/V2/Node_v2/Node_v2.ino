@@ -72,6 +72,9 @@ int cnt2 = 1;
 int echoFlag1 = 0;
 int echoFlag2 = 0;
 
+bool live_mode1 = false;
+bool live_mode2 = false;
+
 // ======================================= 비접촉수위센서
 int WaterSensorData1 = 0;
 int WaterSensorData2 = 0;
@@ -85,8 +88,8 @@ unsigned int l_hour2;         // L/hour
 
 //---------------------------- LED_pin
 
-#define LED_FLOW1 5
-#define LED_FLOW2 2
+#define LED_FLOW1 2
+#define LED_FLOW2 5
 #define LED_DRAIN1 1
 #define LED_DRAIN2 4
 #define LED_Current1 0
@@ -126,8 +129,8 @@ void setup()
   pinMode(nrf_ldo, OUTPUT);
   digitalWrite(FlowSensorPin1, HIGH); // 선택적 내부 풀업
   digitalWrite(FlowSensorPin2, HIGH);
-  attachInterrupt(0, flow1, RISING); // 인터럽트(라이징)
-  attachInterrupt(1, flow2, RISING);
+  attachInterrupt(1, flow1, RISING); // 인터럽트(라이징)
+  attachInterrupt(0, flow2, RISING);
   sei();         // 인터럽트 사용가능
   radio_Init();
 
@@ -168,8 +171,8 @@ void loop()
         previousMillis = millis();
       if (millis() - heartBeatMillis >= 300000) {
         heartBeatMillis = millis();
-        heartBeat(DeviceNum_1);
-        heartBeat(DeviceNum_2);
+        heartBeat(DeviceNum_1, live_mode1);
+        heartBeat(DeviceNum_2, live_mode2);
         Serial.println("heartBeat");
       }
       if (millis() - previousMillis >= printPeriod)
@@ -227,7 +230,6 @@ void loop()
         }
 
         if (l_hour1 > 500) {
-
           bitWrite(data, LED_FLOW1, 1);
           //Serial.println("hour1");
         }
@@ -309,6 +311,8 @@ void loop()
         ;
       else if (SETNUM(AT_Command))
         ;
+      else if (DBCKSGHD(AT_Command))
+        ;
       else if (NOWSTATE(AT_Command))
         ;
       else if (SETDEL_WSH(AT_Command))
@@ -343,7 +347,6 @@ int RFSET(String command)
     }
     Serial.println();
     delay(100);
-    software_Reset();
     return 1;
   }
 
@@ -504,6 +507,33 @@ int SETNUM(String command)
   return 0;
 }
 
+int DBCKSGHD(String command)
+{
+  Serial.println("DBCKSGHD~");
+  if (!(command.compareTo("DBCKSGHD")))
+  {
+    Serial.print("AT+OK ");
+    dexc = SerialData.indexOf(',');
+    String Channel = SerialData.substring(dex1 + 1, dexc);
+    String Number = SerialData.substring(dexc + 1, end);
+    int Number_int = Number.toInt();
+    int Channel_int = Channel.toInt();
+    if (Channel_int == 1)
+    {
+      EEPROM.write(10, Number_int);
+      Serial.print("cksghd1 : ");
+    }
+    else if (Channel_int == 2)
+    {
+      EEPROM.write(11, Number_int);
+      Serial.print("cksghd2 : ");
+    }
+    Serial.println(Number_int);
+    return 1;
+  }
+  return 0;
+}
+
 int SETDEL_WSH(String command)
 {
   Serial.println("SETWSH~");
@@ -642,10 +672,6 @@ void radio_Init() {
   radio.stopListening();
 }
 
-void software_Reset()
-{
-  asm volatile(" jmp 0");
-}
 
 //=================================================================Status_Judgment모드
 void Dryer_Status_Judgment(float Amps_TRMS, int cnt, int m, int DeviceNum, unsigned long previousMillis_end, int ChannelNum) {
@@ -775,16 +801,21 @@ void Status_Judgment(float Amps_TRMS, int WaterSensorData, unsigned int l_hour, 
   }
 }
 
-void heartBeat(int DeviceNum) {
-  Serial.println("live!");
-  radio.powerUp();
-  int DeviceNum_int = int(DeviceNum);
-  String DeviceNum_str = String(DeviceNum_int);
-  RadioData[0] = '2';
-  DeviceNum_str += '0';
-  DeviceNum_str.toCharArray(&RadioData[1], DeviceNum_str.length());
-  radio.write(&RadioData, sizeof(RadioData));
-  radio.powerDown();
+void heartBeat(int DeviceNum, bool liveMode) {
+  if (liveMode) {
+    Serial.println("live!");
+    radio.powerUp();
+    int DeviceNum_int = int(DeviceNum);
+    String DeviceNum_str = String(DeviceNum_int);
+    RadioData[0] = '2';
+    DeviceNum_str += '0';
+    DeviceNum_str.toCharArray(&RadioData[1], DeviceNum_str.length());
+    radio.write(&RadioData, sizeof(RadioData));
+    radio.powerDown();
+  }
+  else {
+    Serial.println("die!");
+  }
 }
 
 void SetDefaultVal() {
@@ -821,4 +852,8 @@ void SetDefaultVal() {
   Serial.println(endPeriod);
   Serial.print("Time_DRY : ");
   Serial.println(endPeriod_dryer);
+  live_mode1 = EEPROM.read(10);
+  if (live_mode1 < 0) live_mode1 = 1;
+  live_mode2 = EEPROM.read(11);
+  if (live_mode2 < 0) live_mode2 = 1;
 }
