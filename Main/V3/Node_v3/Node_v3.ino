@@ -41,8 +41,8 @@ unsigned long heartBeatMillis = 0;
 int m1 = 0, m2 = 0;
 
 bool mode_debug = false;
-bool mode_dryer1 = false;
-bool mode_dryer2 = false;
+bool CH1_Mode = false;
+bool CH2_Mode = false;
 
 int cnt1 = 1;
 int cnt2 = 1;
@@ -120,10 +120,14 @@ void setup()
 
   SetDefaultVal();
   mode_debug = digitalRead(PIN_DEBUG);
-  mode_dryer1 = digitalRead(PIN_CH1_MODE);
-  mode_dryer2 = digitalRead(PIN_CH2_MODE);
-
+  CH1_Mode = digitalRead(PIN_CH1_MODE);
+  CH2_Mode = digitalRead(PIN_CH2_MODE);
+  Serial.print("DEBUG : ");
   Serial.println(mode_debug);
+  Serial.print("CH1 : ");
+  Serial.println(CH1_Mode);
+  Serial.print("CH2 : ");
+  Serial.println(CH2_Mode);
   ct1.current(PIN_CT1, 30.7);
   ct2.current(PIN_CT2, 30.7);
   for(int i=0;i<30;i++)
@@ -174,7 +178,7 @@ void loop()
         Serial.println();
       }
 
-      if (mode_dryer1)
+      if (CH1_Mode)
       {
         Status_Judgment(Amps_TRMS1, WaterSensorData1, l_hour1, cnt1, m1, previousMillis_end1, CH1_DeviceNo, 1);
       }
@@ -183,7 +187,7 @@ void loop()
         Dryer_Status_Judgment(Amps_TRMS1, cnt1, m1, CH1_DeviceNo, previousMillis_end1, 1);
       }
 
-      if (mode_dryer2)
+      if (CH2_Mode)
       {
         Status_Judgment(Amps_TRMS2, WaterSensorData2, l_hour2, cnt2, m2, previousMillis_end2, CH2_DeviceNo, 2);
       }
@@ -476,7 +480,19 @@ void Dryer_Status_Judgment(float Amps_TRMS, int cnt, int m, String DeviceNum, un
   {
     if (cnt == 1)
     {
-      //건조기 작동 시작 시
+      if (ChannelNum == 1)
+      {
+        cnt1 = 0;
+        digitalWrite(PIN_CH1_LED, HIGH);
+      }
+      if (ChannelNum == 2)
+      {
+        cnt2 = 0;
+        digitalWrite(PIN_CH2_LED, HIGH);
+      }
+      Serial.print("CH");
+      Serial.print(ChannelNum);
+      Serial.println(" Dryer Started");
     }
     if (ChannelNum == 1)  m1 = 1;
     if (ChannelNum == 2)  m2 = 1;
@@ -498,7 +514,19 @@ void Dryer_Status_Judgment(float Amps_TRMS, int cnt, int m, String DeviceNum, un
       ;
     else if (millis() - previousMillis_end >= endPeriod_dryer)
     {
-      //건조기 작동 종료 시
+      Serial.print("CH");
+      Serial.print(ChannelNum);
+      Serial.println(" Dryer Ended");
+      if (ChannelNum == 1)
+      {
+        cnt1 = 1;
+        digitalWrite(PIN_CH1_LED, LOW);
+      }
+      if (ChannelNum == 2)
+      {
+        cnt2 = 1;
+        digitalWrite(PIN_CH2_LED, LOW);
+      }
     }
   }
 }
@@ -507,7 +535,19 @@ void Status_Judgment(float Amps_TRMS, int WaterSensorData, unsigned int l_hour, 
   {
     if (cnt == 1)
     {
-      //세탁기 작동 시작 시
+      if (ChannelNum == 1)
+      {
+        cnt1 = 0;
+        digitalWrite(PIN_CH1_LED, HIGH);
+      }
+      if (ChannelNum == 2)
+      {
+        cnt2 = 0;
+        digitalWrite(PIN_CH2_LED, HIGH);
+      }
+      Serial.print("CH");
+      Serial.print(ChannelNum);
+      Serial.println(" Washer Started");
     }
     if (ChannelNum == 1)  m1 = 1;
     if (ChannelNum == 2)  m2 = 1;
@@ -529,7 +569,19 @@ void Status_Judgment(float Amps_TRMS, int WaterSensorData, unsigned int l_hour, 
       ;
     else if (millis() - previousMillis_end >= endPeriod)
     {
-      //세탁기 작동 종료 시
+      Serial.print("CH");
+      Serial.print(ChannelNum);
+      Serial.println(" Washer Ended");
+      if (ChannelNum == 1)
+      {
+        cnt1 = 1;
+        digitalWrite(PIN_CH1_LED, LOW);
+      }
+      if (ChannelNum == 2)
+      {
+        cnt2 = 1;
+        digitalWrite(PIN_CH2_LED, LOW);
+      }
     }
   }
 }
