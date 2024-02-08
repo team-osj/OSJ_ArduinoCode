@@ -226,6 +226,7 @@ void webSocketEvent(WStype_t type, uint8_t *payload, size_t length)
       MyStatus["ch2_flow"] = l_hour2;
       MyStatus["ch1_drain"] = WaterSensorData1;
       MyStatus["ch2_drain"] = WaterSensorData2;
+      MyStatus["wifi_ssid"] = ap_ssid;
       MyStatus["wifi_rssi"] = WiFi.RSSI();
       MyStatus["wifi_ip"] = WiFi.localIP().toString();
       MyStatus["mac"] = WiFi.macAddress();
