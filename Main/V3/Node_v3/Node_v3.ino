@@ -58,8 +58,8 @@ bool CH2_CurrStatus = 1;
 int cnt1 = 1;
 int cnt2 = 1;
 
-bool CH1_Live = false;
-bool CH2_Live = false;
+bool CH1_Live = true;
+bool CH2_Live = true;
 
 String Device_Name = "OSJ_";
 String ap_ssid;
@@ -161,8 +161,14 @@ void webSocketEvent(WStype_t type, uint8_t *payload, size_t length)
   case WStype_CONNECTED:
   {
     Serial.printf("[WSc] Connected to url: %s\n", payload);
-    SendStatus(1,CH1_CurrStatus);
-    SendStatus(2,CH2_CurrStatus);
+    if(CH1_Live == true)
+    {
+      SendStatus(1,CH1_CurrStatus);
+    }
+    if(CH2_Live == true)
+    {
+      SendStatus(2,CH2_CurrStatus);
+    }
   }
   break;
   case WStype_TEXT:
@@ -174,18 +180,55 @@ void webSocketEvent(WStype_t type, uint8_t *payload, size_t length)
     {
       StaticJsonDocument<400> MyStatus;
       MyStatus["title"] = "GetData";
-      MyStatus["debug"] = "Yes";
-      MyStatus["ch1_mode"] = "Dry";
-      MyStatus["ch2_mode"] = "Wash";
-      MyStatus["ch1_status"] = "Not Working";
-      MyStatus["ch2_status"] = "Not Working";
-      MyStatus["ch1_current"] = "10.000";
-      MyStatus["ch2_current"] = "10.000";
-      MyStatus["ch1_flow"] = "10";
-      MyStatus["ch2_flow"] = "10";
-      MyStatus["ch1_drain"] = "1";
-      MyStatus["ch2_drain"] = "1";
-      MyStatus["wifi_rssi"] = "-59";
+      if (mode_debug)
+      {
+        MyStatus["debug"] = "No";
+      }
+      else
+      {
+        MyStatus["debug"] = "Yes";
+      }
+      if (CH1_Mode)
+      {
+        MyStatus["ch1_mode"] = "Wash";
+      }
+      else
+      {
+        MyStatus["ch1_mode"] = "Dry";
+      }
+      if (CH2_Mode)
+      {
+        MyStatus["ch2_mode"] = "Wash";
+      }
+      else
+      {
+        MyStatus["ch2_mode"] = "Dry";
+      }
+      if (CH1_CurrStatus)
+      {
+        MyStatus["ch1_status"] = "Not Working";
+      }
+      else
+      {
+        MyStatus["ch1_status"] = "Working";
+      }
+      if (CH2_CurrStatus)
+      {
+        MyStatus["ch2_status"] = "Not Working";
+      }
+      else
+      {
+        MyStatus["ch2_status"] = "Working";
+      }
+      MyStatus["ch1_current"] = Amps_TRMS1;
+      MyStatus["ch2_current"] = Amps_TRMS2;
+      MyStatus["ch1_flow"] = l_hour1;
+      MyStatus["ch2_flow"] = l_hour2;
+      MyStatus["ch1_drain"] = WaterSensorData1;
+      MyStatus["ch2_drain"] = WaterSensorData2;
+      MyStatus["wifi_rssi"] = WiFi.RSSI();
+      MyStatus["wifi_ip"] = WiFi.localIP().toString();
+      MyStatus["mac"] = WiFi.macAddress();
       String MyStatus_String;
       serializeJson(MyStatus, MyStatus_String);
       webSocket.sendTXT(MyStatus_String);
@@ -204,6 +247,10 @@ void webSocketEvent(WStype_t type, uint8_t *payload, size_t length)
 
 int SendStatus(int ch, bool status)
 {
+  if(ch == 1 && CH1_Live == false)
+    return 1;
+  if(ch == 2 && CH2_Live == false)
+    return 1;
   if (WiFi.status() == WL_CONNECTED && webSocket.isConnected() == true)
   {
     StaticJsonDocument<100> CurrStatus;
@@ -356,13 +403,13 @@ void loop()
       flow_frequency1 = 0; // 변수 초기화
       flow_frequency2 = 0;
       Serial.print("CT1 : ");
-      Serial.println(Amps_TRMS1);
+      Serial.println(Amps_TRMS1, 3);
       Serial.print("Water1 : ");
       Serial.println(WaterSensorData1);
       Serial.print("L/h1 : ");
       Serial.println(l_hour1);
       Serial.print("CT2 : ");
-      Serial.println(Amps_TRMS2);
+      Serial.println(Amps_TRMS2, 3);
       Serial.print("Water2 : ");
       Serial.println(WaterSensorData2);
       Serial.print("L/h2 : ");
@@ -620,12 +667,12 @@ int DBCKSGHD(String SerialData, int dex1, int dexc, int end)
   if (Channel_int == 1)
   {
     preferences.putBool("CH1_Live", Number_int);
-    Serial.print("cksghd1 : ");
+    Serial.print("cksghd_ch1 : ");
   }
   else if (Channel_int == 2)
   {
     preferences.putBool("CH2_Live", Number_int);
-    Serial.print("cksghd2 : ");
+    Serial.print("cksghd_ch2 : ");
   }
   Serial.println(Number_int);
   return 0;
@@ -682,13 +729,13 @@ void Dryer_Status_Judgment(float Amps_TRMS, int cnt, int m, unsigned long previo
       {
         cnt1 = 0;
         digitalWrite(PIN_CH1_LED, HIGH);
-        CH2_CurrStatus = 1;
+        CH2_CurrStatus = 0;
       }
       if (ChannelNum == 2)
       {
         cnt2 = 0;
         digitalWrite(PIN_CH2_LED, HIGH);
-        CH2_CurrStatus = 1;
+        CH2_CurrStatus = 0;
       }
       Serial.print("CH");
       Serial.print(ChannelNum);
@@ -727,13 +774,13 @@ void Dryer_Status_Judgment(float Amps_TRMS, int cnt, int m, unsigned long previo
       {
         cnt1 = 1;
         digitalWrite(PIN_CH1_LED, LOW);
-        CH1_CurrStatus = 0;
+        CH1_CurrStatus = 1;
       }
       if (ChannelNum == 2)
       {
         cnt2 = 1;
         digitalWrite(PIN_CH2_LED, LOW);
-        CH2_CurrStatus = 0;
+        CH2_CurrStatus = 1;
       }
     }
   }
@@ -748,13 +795,13 @@ void Status_Judgment(float Amps_TRMS, int WaterSensorData, unsigned int l_hour, 
       {
         cnt1 = 0;
         digitalWrite(PIN_CH1_LED, HIGH);
-        CH1_CurrStatus = 1;
+        CH1_CurrStatus = 0;
       }
       if (ChannelNum == 2)
       {
         cnt2 = 0;
         digitalWrite(PIN_CH2_LED, HIGH);
-        CH2_CurrStatus = 1;
+        CH2_CurrStatus = 0;
       }
       Serial.print("CH");
       Serial.print(ChannelNum);
@@ -816,8 +863,8 @@ void SetDefaultVal()
   CH2_DeviceNo = preferences.getString("CH2_DeviceNo", "2");
   endPeriod = preferences.getUInt("endPeriod", 10);
   endPeriod_dryer = preferences.getUInt("endPeriod_dryer", 10);
-  CH1_Live = preferences.getBool("CH1_Live", false);
-  CH2_Live = preferences.getBool("CH2_Live", false);
+  CH1_Live = preferences.getBool("CH1_Live", true);
+  CH2_Live = preferences.getBool("CH2_Live", true);
   Device_Name = Device_Name + serial_no;
   WiFi.setHostname(Device_Name.c_str());
   Serial.print("My Name Is :");
