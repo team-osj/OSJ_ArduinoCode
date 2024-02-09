@@ -32,8 +32,6 @@ WebSocketsClient webSocket;
 StaticJsonDocument<200> doc;
 
 // ============================================== millis()&if()
-unsigned int endPeriod;
-unsigned int endPeriod_dryer;
 
 unsigned long printPeriod = 500;
 unsigned long previousMillis = 0;
@@ -41,23 +39,33 @@ unsigned long previousMillis_end1 = 0;
 unsigned long previousMillis_end2 = 0;
 unsigned long echoPeriod1 = 200;
 unsigned long echoPeriod2 = 200;
-unsigned long echoMillis1 = 0;
-unsigned long echoMillis2 = 0;
 unsigned long led_millis_prev;
 unsigned long curr_millis;
 
 int m1 = 0, m2 = 0;
 
 bool mode_debug = false;
+
+//작동 시작 조건
+float CH1_Current_Wash;
+float CH2_Current_Wash;
+unsigned int CH1_Flow_Wash;
+unsigned int CH2_Flow_Wash;
+float Ch1_Current_Dry;
+float Ch2_Current_Dry;
+
+//작동 종료 조건
+unsigned int CH1_EndDelay_Wash;
+unsigned int CH2_EndDelay_Wash;
+unsigned int CH1_EndDelay_Dry;
+unsigned int CH2_EndDelay_Dry;
+
 bool CH1_Mode = false;
 bool CH2_Mode = false;
-
 bool CH1_CurrStatus = 1;
 bool CH2_CurrStatus = 1;
-
-int cnt1 = 1;
-int cnt2 = 1;
-
+int CH1_Cnt = 1;
+int CH2_Cnt = 1;
 bool CH1_Live = true;
 bool CH2_Live = true;
 
@@ -161,13 +169,13 @@ void webSocketEvent(WStype_t type, uint8_t *payload, size_t length)
   case WStype_CONNECTED:
   {
     Serial.printf("[WSc] Connected to url: %s\n", payload);
-    if(CH1_Live == true)
+    if (CH1_Live == true)
     {
-      SendStatus(1,CH1_CurrStatus);
+      SendStatus(1, CH1_CurrStatus);
     }
-    if(CH2_Live == true)
+    if (CH2_Live == true)
     {
-      SendStatus(2,CH2_CurrStatus);
+      SendStatus(2, CH2_CurrStatus);
     }
   }
   break;
@@ -178,7 +186,7 @@ void webSocketEvent(WStype_t type, uint8_t *payload, size_t length)
     String title = doc["title"];
     if (title == "GetData")
     {
-      StaticJsonDocument<400> MyStatus;
+      StaticJsonDocument<500> MyStatus;
       MyStatus["title"] = "GetData";
       if (mode_debug)
       {
@@ -220,6 +228,18 @@ void webSocketEvent(WStype_t type, uint8_t *payload, size_t length)
       {
         MyStatus["ch2_status"] = "Working";
       }
+      MyStatus["ch1_current_wash"] = CH1_Current_Wash;
+      MyStatus["ch2_current_wash"] = CH2_Current_Wash;
+      MyStatus["ch1_flow_wash"] = CH1_Flow_Wash;
+      MyStatus["ch2_flow_wash"] = CH2_Flow_Wash;  
+      MyStatus["ch1_current_dry"] = Ch1_Current_Dry;
+      MyStatus["ch1_current_dry"] = Ch2_Current_Dry;  
+      MyStatus["ch1_enddelay_wash"] = CH1_EndDelay_Wash;
+      MyStatus["ch2_enddelay_wash"] = CH2_EndDelay_Wash;
+      MyStatus["ch1_enddelay_dry"] = CH1_EndDelay_Dry;
+      MyStatus["ch2_enddelay_dry"] = CH2_EndDelay_Dry;
+      MyStatus["ch1_deviceno"] = CH1_DeviceNo;
+      MyStatus["ch2_deviceno"] = CH2_DeviceNo;
       MyStatus["ch1_current"] = Amps_TRMS1;
       MyStatus["ch2_current"] = Amps_TRMS2;
       MyStatus["ch1_flow"] = l_hour1;
@@ -248,9 +268,9 @@ void webSocketEvent(WStype_t type, uint8_t *payload, size_t length)
 
 int SendStatus(int ch, bool status)
 {
-  if(ch == 1 && CH1_Live == false)
+  if (ch == 1 && CH1_Live == false)
     return 1;
-  if(ch == 2 && CH2_Live == false)
+  if (ch == 2 && CH2_Live == false)
     return 1;
   if (WiFi.status() == WL_CONNECTED && webSocket.isConnected() == true)
   {
@@ -297,8 +317,10 @@ void setup()
   mode_debug = digitalRead(PIN_DEBUG);
   CH1_Mode = digitalRead(PIN_CH1_MODE);
   CH2_Mode = digitalRead(PIN_CH2_MODE);
-  Serial.print("DEBUG : ");
-  Serial.println(mode_debug);
+  if(mode_debug == 0)
+  {
+    Serial.println("YOU ARE IN THE DEBUG MODE !!!");
+  }
   Serial.print("CH1 : ");
   Serial.println(CH1_Mode);
   Serial.print("CH2 : ");
@@ -422,25 +444,43 @@ void loop()
 
     if (CH1_Mode)
     {
-      Status_Judgment(Amps_TRMS1, WaterSensorData1, l_hour1, cnt1, m1, previousMillis_end1, 1);
+      Status_Judgment(Amps_TRMS1, WaterSensorData1, l_hour1, CH1_Cnt, m1, previousMillis_end1, 1);
     }
     else
     {
-      Dryer_Status_Judgment(Amps_TRMS1, cnt1, m1, previousMillis_end1, 1);
+      Dryer_Status_Judgment(Amps_TRMS1, CH1_Cnt, m1, previousMillis_end1, 1);
     }
 
     if (CH2_Mode)
     {
-      Status_Judgment(Amps_TRMS2, WaterSensorData2, l_hour2, cnt2, m2, previousMillis_end2, 2);
+      Status_Judgment(Amps_TRMS2, WaterSensorData2, l_hour2, CH2_Cnt, m2, previousMillis_end2, 2);
     }
     else
     {
-      Dryer_Status_Judgment(Amps_TRMS2, cnt2, m2, previousMillis_end2, 2);
+      Dryer_Status_Judgment(Amps_TRMS2, CH2_Cnt, m2, previousMillis_end2, 2);
     }
   }
   //=======================================================================디버그 모드
   else
   {
+    curr_millis = millis();
+    bool led_status = 0;
+    if (curr_millis - led_millis_prev >= 100)
+    {
+      led_millis_prev = curr_millis;
+      if (led_status == 1)
+      {
+        led_status = 0;
+        digitalWrite(PIN_CH1_LED, HIGH);
+        digitalWrite(PIN_CH2_LED, LOW);
+      }
+      else if (led_status == 0)
+      {
+        led_status = 1;
+        digitalWrite(PIN_CH1_LED, LOW);
+        digitalWrite(PIN_CH2_LED, HIGH);
+      }
+    }
     if (Serial.available())
     {
       int dex, dex1, dexc, end;
@@ -685,7 +725,7 @@ int SETDEL_WSH(String SerialData, int dex1, int end)
   int Time_int = Time.toInt();
   if (Time_int < 255)
   {
-    preferences.putUInt("endPeriod", Time_int);
+    preferences.putUInt("CH1_EndDelay_Wash", Time_int);
     Serial.print("TimeSet : ");
     Serial.println(Time_int);
   }
@@ -702,7 +742,7 @@ int SETDEL_DRY(String SerialData, int dex1, int end)
   int Time_int = Time.toInt();
   if (Time_int < 255)
   {
-    preferences.putUInt("endPeriod_dryer", Time_int);
+    preferences.putUInt("CH1_EndDelay_Dry", Time_int);
     Serial.print("TimeSet : ");
     Serial.println(Time_int);
   }
@@ -722,31 +762,33 @@ int NOWSTATE()
 //=================================================================Status_Judgment모드
 void Dryer_Status_Judgment(float Amps_TRMS, int cnt, int m, unsigned long previousMillis_end, int ChannelNum)
 {
-  if (Amps_TRMS > 0.3)
+  if (ChannelNum == 1 && Amps_TRMS > Ch1_Current_Dry)
   {
-    if (cnt == 1)
+    if (cnt == 1) // 건조기 동작 시작
     {
-      if (ChannelNum == 1)
-      {
-        cnt1 = 0;
-        digitalWrite(PIN_CH1_LED, HIGH);
-        CH2_CurrStatus = 0;
-      }
-      if (ChannelNum == 2)
-      {
-        cnt2 = 0;
-        digitalWrite(PIN_CH2_LED, HIGH);
-        CH2_CurrStatus = 0;
-      }
+      CH1_Cnt = 0;
+      digitalWrite(PIN_CH1_LED, HIGH);
+      CH2_CurrStatus = 0;
       Serial.print("CH");
       Serial.print(ChannelNum);
       Serial.println(" Dryer Started");
-      SendStatus(ChannelNum,0);
+      SendStatus(ChannelNum, 0);
     }
-    if (ChannelNum == 1)
-      m1 = 1;
-    if (ChannelNum == 2)
-      m2 = 1;
+    m1 = 1;
+  }
+  else if (ChannelNum == 2 && Amps_TRMS > Ch2_Current_Dry)
+  {
+    if (cnt == 1) // 건조기 동작 시작
+    {
+      CH2_Cnt = 0;
+      digitalWrite(PIN_CH2_LED, HIGH);
+      CH2_CurrStatus = 0;
+      Serial.print("CH");
+      Serial.print(ChannelNum);
+      Serial.println(" Dryer Started");
+      SendStatus(ChannelNum, 0);
+    }
+    m2 = 1;
   }
   else
   {
@@ -765,49 +807,47 @@ void Dryer_Status_Judgment(float Amps_TRMS, int cnt, int m, unsigned long previo
     }
     else if (cnt)
       ;
-    else if (millis() - previousMillis_end >= endPeriod_dryer)
+    else if (ChannelNum == 1 && millis() - previousMillis_end >= CH1_EndDelay_Dry) // CH1 건조기 동작 종료
     {
-      Serial.print("CH");
-      Serial.print(ChannelNum);
-      Serial.println(" Dryer Ended");
-      SendStatus(ChannelNum,1);
-      if (ChannelNum == 1)
-      {
-        cnt1 = 1;
-        digitalWrite(PIN_CH1_LED, LOW);
-        CH1_CurrStatus = 1;
-      }
-      if (ChannelNum == 2)
-      {
-        cnt2 = 1;
-        digitalWrite(PIN_CH2_LED, LOW);
-        CH2_CurrStatus = 1;
-      }
+      Serial.println("CH1 Dryer Ended");
+      SendStatus(1, 1);
+      CH1_Cnt = 1;
+      digitalWrite(PIN_CH1_LED, LOW);
+      CH1_CurrStatus = 1;
+    }
+    else if (ChannelNum == 2 && millis() - previousMillis_end >= CH2_EndDelay_Dry) // CH2 건조기 동작 종료
+    {
+      Serial.println("CH2 Dryer Ended");
+      SendStatus(2, 1);
+      CH2_Cnt = 1;
+      digitalWrite(PIN_CH2_LED, LOW);
+      CH2_CurrStatus = 1;
     }
   }
 }
+
 void Status_Judgment(float Amps_TRMS, int WaterSensorData, unsigned int l_hour, int cnt, int m, unsigned long previousMillis_end, int ChannelNum)
 {
   if (Amps_TRMS > 0.5 || WaterSensorData || l_hour > 50)
   {
-    if (cnt == 1)
+    if (cnt == 1) // 세탁기 동작 시작
     {
       if (ChannelNum == 1)
       {
-        cnt1 = 0;
+        CH1_Cnt = 0;
         digitalWrite(PIN_CH1_LED, HIGH);
         CH1_CurrStatus = 0;
       }
       if (ChannelNum == 2)
       {
-        cnt2 = 0;
+        CH2_Cnt = 0;
         digitalWrite(PIN_CH2_LED, HIGH);
         CH2_CurrStatus = 0;
       }
       Serial.print("CH");
       Serial.print(ChannelNum);
       Serial.println(" Washer Started");
-      SendStatus(ChannelNum,0);
+      SendStatus(ChannelNum, 0);
     }
     if (ChannelNum == 1)
       m1 = 1;
@@ -831,24 +871,21 @@ void Status_Judgment(float Amps_TRMS, int WaterSensorData, unsigned int l_hour, 
     }
     else if (cnt)
       ;
-    else if (millis() - previousMillis_end >= endPeriod)
+    else if (ChannelNum == 1 && millis() - previousMillis_end >= CH1_EndDelay_Wash) // CH1 세탁기 동작 종료
     {
-      Serial.print("CH");
-      Serial.print(ChannelNum);
-      Serial.println(" Washer Ended");
-      SendStatus(ChannelNum,1);
-      if (ChannelNum == 1)
-      {
-        cnt1 = 1;
-        digitalWrite(PIN_CH1_LED, LOW);
-        CH1_CurrStatus = 1;
-      }
-      if (ChannelNum == 2)
-      {
-        cnt2 = 1;
-        digitalWrite(PIN_CH2_LED, LOW);
-        CH2_CurrStatus = 1;
-      }
+      Serial.println("CH1 Washer Ended");
+      SendStatus(1, 1);
+      CH1_Cnt = 1;
+      digitalWrite(PIN_CH1_LED, LOW);
+      CH1_CurrStatus = 1;
+    }
+    else if (ChannelNum == 2 && millis() - previousMillis_end >= CH2_EndDelay_Wash) // CH2 세탁기 동작 종료
+    {
+      Serial.println("CH2 Washer Ended");
+      SendStatus(2, 1);
+      CH2_Cnt = 1;
+      digitalWrite(PIN_CH2_LED, LOW);
+      CH2_CurrStatus = 1;
     }
   }
 }
@@ -860,12 +897,25 @@ void SetDefaultVal()
   serial_no = preferences.getString("serial_no", "0");
   auth_id = preferences.getString("AUTH_ID", "");
   auth_passwd = preferences.getString("AUTH_PASSWD", "");
+
   CH1_DeviceNo = preferences.getString("CH1_DeviceNo", "1");
   CH2_DeviceNo = preferences.getString("CH2_DeviceNo", "2");
-  endPeriod = preferences.getUInt("endPeriod", 10);
-  endPeriod_dryer = preferences.getUInt("endPeriod_dryer", 10);
+
+  CH1_Current_Wash = preferences.getFloat("CH1_Current_Wash", 0.2);
+  CH2_Current_Wash = preferences.getFloat("CH2_Current_Wash", 0.2);
+  CH1_Flow_Wash = preferences.getUInt("CH1_Flow_Wash", 50);
+  CH2_Flow_Wash = preferences.getUInt("CH2_Flow_Wash", 50);
+  Ch1_Current_Dry = preferences.getFloat("Ch1_Current_Dry", 0.5);
+  Ch2_Current_Dry = preferences.getFloat("Ch2_Current_Dry", 0.5);
+
+  CH1_EndDelay_Wash = preferences.getUInt("CH1_EndDelay_Wash", 10);
+  CH2_EndDelay_Wash = preferences.getUInt("CH2_EndDelay_Wash", 10);
+  CH1_EndDelay_Dry = preferences.getUInt("CH1_EndDelay_Dry", 10);
+  CH2_EndDelay_Dry = preferences.getUInt("CH2_EndDelay_Dry", 10);
+
   CH1_Live = preferences.getBool("CH1_Live", true);
   CH2_Live = preferences.getBool("CH2_Live", true);
+
   Device_Name = Device_Name + serial_no;
   WiFi.setHostname(Device_Name.c_str());
   Serial.print("My Name Is :");
@@ -882,12 +932,22 @@ void SetDefaultVal()
   {
     Serial.println("NO WIFI SSID!!! YOU NEED TO CONFIG WIFI BY AT+SETAP_SSID AND AT+SETAP_PASSWD IN DEBUG MODE!!!");
   }
-  endPeriod *= 10000;
-  endPeriod_dryer *= 1000;
-  Serial.print("Time_WSH : ");
-  Serial.print(endPeriod);
-  Serial.print(" Time_DRY : ");
-  Serial.println(endPeriod_dryer);
+  CH1_EndDelay_Wash *= 10000;
+  CH2_EndDelay_Wash *= 10000;
+  CH1_EndDelay_Dry *= 1000;
+  CH2_EndDelay_Dry *= 1000;
+  Serial.print("Ch1_Current_Dry : ");
+  Serial.print(Ch1_Current_Dry);
+  Serial.print(" Ch2_Current_Dry : ");
+  Serial.print(Ch2_Current_Dry);
+  Serial.print(" CH1_Delay_WSH : ");
+  Serial.print(CH1_EndDelay_Wash);
+  Serial.print(" CH2_Delay_WSH : ");
+  Serial.print(CH2_EndDelay_Wash);
+  Serial.print(" CH1_Delay_Dry : ");
+  Serial.print(CH1_EndDelay_Dry);
+  Serial.print(" CH2_Delay_Dry : ");
+  Serial.println(CH2_EndDelay_Dry);
 }
 
 void NETWORK_INFO()
@@ -897,10 +957,10 @@ void NETWORK_INFO()
   Serial.println(WiFiStatusCode(WiFi.status()));
   if (WiFi.status() == WL_CONNECTED)
   {
-      Serial.print("RSSI = ");
-      Serial.println(WiFi.RSSI());
-      String ip = WiFi.localIP().toString();
-      Serial.printf("Local IP = %s\r\n", ip.c_str());
+    Serial.print("RSSI = ");
+    Serial.println(WiFi.RSSI());
+    String ip = WiFi.localIP().toString();
+    Serial.printf("Local IP = %s\r\n", ip.c_str());
   }
   Serial.print("MAC = ");
   Serial.println(WiFi.macAddress());
@@ -915,8 +975,8 @@ void printLocalTime()
   struct tm timeinfo;
   if (!getLocalTime(&timeinfo))
   {
-      Serial.println("Failed to obtain time");
-      return;
+    Serial.println("Failed to obtain time");
+    return;
   }
   Serial.println(&timeinfo, "%A, %B %d %Y %H:%M:%S");
 }
