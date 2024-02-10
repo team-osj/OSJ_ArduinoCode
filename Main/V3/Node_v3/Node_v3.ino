@@ -46,19 +46,21 @@ int m1 = 0, m2 = 0;
 
 bool mode_debug = false;
 
+bool led_status = 0;
+
 //작동 시작 조건
-float CH1_Current_Wash;
-float CH2_Current_Wash;
-unsigned int CH1_Flow_Wash;
-unsigned int CH2_Flow_Wash;
-float Ch1_Current_Dry;
-float Ch2_Current_Dry;
+float CH1_Curr_W;
+float CH2_Curr_W;
+unsigned int CH1_Flow_W;
+unsigned int CH2_Flow_W;
+float CH1_Curr_D;
+float CH2_Curr_D;
 
 //작동 종료 조건
-unsigned int CH1_EndDelay_Wash;
-unsigned int CH2_EndDelay_Wash;
-unsigned int CH1_EndDelay_Dry;
-unsigned int CH2_EndDelay_Dry;
+unsigned int CH1_EndDelay_W;
+unsigned int CH2_EndDelay_W;
+unsigned int CH1_EndDelay_D;
+unsigned int CH2_EndDelay_D;
 
 bool CH1_Mode = false;
 bool CH2_Mode = false;
@@ -169,13 +171,16 @@ void webSocketEvent(WStype_t type, uint8_t *payload, size_t length)
   case WStype_CONNECTED:
   {
     Serial.printf("[WSc] Connected to url: %s\n", payload);
-    if (CH1_Live == true)
+    if (mode_debug)
     {
-      SendStatus(1, CH1_CurrStatus);
-    }
-    if (CH2_Live == true)
-    {
-      SendStatus(2, CH2_CurrStatus);
+      if (CH1_Live == true)
+      {
+        SendStatus(1, CH1_CurrStatus);
+      }
+      if (CH2_Live == true)
+      {
+        SendStatus(2, CH2_CurrStatus);
+      }
     }
   }
   break;
@@ -228,16 +233,16 @@ void webSocketEvent(WStype_t type, uint8_t *payload, size_t length)
       {
         MyStatus["ch2_status"] = "Working";
       }
-      MyStatus["ch1_current_wash"] = CH1_Current_Wash;
-      MyStatus["ch2_current_wash"] = CH2_Current_Wash;
-      MyStatus["ch1_flow_wash"] = CH1_Flow_Wash;
-      MyStatus["ch2_flow_wash"] = CH2_Flow_Wash;  
-      MyStatus["ch1_current_dry"] = Ch1_Current_Dry;
-      MyStatus["ch1_current_dry"] = Ch2_Current_Dry;  
-      MyStatus["ch1_enddelay_wash"] = CH1_EndDelay_Wash;
-      MyStatus["ch2_enddelay_wash"] = CH2_EndDelay_Wash;
-      MyStatus["ch1_enddelay_dry"] = CH1_EndDelay_Dry;
-      MyStatus["ch2_enddelay_dry"] = CH2_EndDelay_Dry;
+      MyStatus["CH1_Curr_W"] = CH1_Curr_W;
+      MyStatus["CH2_Curr_W"] = CH2_Curr_W;
+      MyStatus["CH1_Flow_W"] = CH1_Flow_W;
+      MyStatus["CH2_Flow_W"] = CH2_Flow_W;  
+      MyStatus["CH1_Curr_D"] = CH1_Curr_D;
+      MyStatus["CH1_Curr_D"] = CH2_Curr_D;  
+      MyStatus["CH1_EndDelay_W"] = CH1_EndDelay_W;
+      MyStatus["CH2_EndDelay_W"] = CH2_EndDelay_W;
+      MyStatus["CH1_EndDelay_D"] = CH1_EndDelay_D;
+      MyStatus["CH2_EndDelay_D"] = CH2_EndDelay_D;
       MyStatus["ch1_deviceno"] = CH1_DeviceNo;
       MyStatus["ch2_deviceno"] = CH2_DeviceNo;
       MyStatus["ch1_current"] = Amps_TRMS1;
@@ -321,9 +326,9 @@ void setup()
   {
     Serial.println("YOU ARE IN THE DEBUG MODE !!!");
   }
-  Serial.print("CH1 : ");
+  Serial.print("CH1_Mode : ");
   Serial.println(CH1_Mode);
-  Serial.print("CH2 : ");
+  Serial.print("CH2_Mode : ");
   Serial.println(CH2_Mode);
   WiFi.disconnect(true);
   for (int i = 0; i < 30; i++) // 센서 안정화
@@ -464,7 +469,6 @@ void loop()
   else
   {
     curr_millis = millis();
-    bool led_status = 0;
     if (curr_millis - led_millis_prev >= 100)
     {
       led_millis_prev = curr_millis;
@@ -503,35 +507,19 @@ void loop()
       {
         Serial.println("AT+OK UPDATE");
       }
-      else if (!(AT_Command.compareTo("SET_CH1")))
+      else if (!(AT_Command.compareTo("CH1_SETVAR")))
       {
-        Serial.println("AT+OK SET_CH1");
-        SETNUM(SerialData, dex1, end, 1);
+        Serial.println("AT+OK CH1_SETVAR");
+        CH1_SETVAR(SerialData, dex1, dexc, end);
       }
-      else if (!(AT_Command.compareTo("SET_CH2")))
+      else if (!(AT_Command.compareTo("CH2_SETVAR")))
       {
-        Serial.println("AT+OK SET_CH2");
-        SETNUM(SerialData, dex1, end, 2);
+        Serial.println("AT+OK CH2_SETVAR");
+        CH2_SETVAR(SerialData, dex1, dexc, end);
       }
-      else if (!(AT_Command.compareTo("NOWSTATE")))
+      else if (!(AT_Command.compareTo("UPDATE")))
       {
-        Serial.println("AT+OK NOWSTATE");
-        NOWSTATE();
-      }
-      else if (!(AT_Command.compareTo("SETDEL_WSH")))
-      {
-        Serial.println("AT+OK SETDEL_WSH");
-        SETDEL_WSH(SerialData, dex1, end);
-      }
-      else if (!(AT_Command.compareTo("SETDEL_DRY")))
-      {
-        Serial.println("AT+OK SETDEL_DRY");
-        SETDEL_DRY(SerialData, dex1, end);
-      }
-      else if (!(AT_Command.compareTo("DBCKSGHD")))
-      {
-        Serial.println("AT+OK DBCKSGHD");
-        DBCKSGHD(SerialData, dex1, dexc, end);
+        Serial.println("AT+OK UPDATE");
       }
       else if (!(AT_Command.compareTo("NETWORK_INFO")))
       {
@@ -679,76 +667,124 @@ void loop()
 //   }
 // }
 
-int SETNUM(String sd, int dex1, int end, int channel)
-{
-  if (channel == 1)
-  {
-    CH1_DeviceNo = sd.substring(dex1 + 1, end - 1);
-    Serial.print("CH1_DeviceNo = ");
-    Serial.println(CH1_DeviceNo);
-    preferences.putString("CH1_DeviceNo", CH1_DeviceNo);
-  }
-  else if (channel == 2)
-  {
-    CH2_DeviceNo = sd.substring(dex1 + 1, end - 1);
-    Serial.print("CH2_DeviceNo = ");
-    Serial.println(CH2_DeviceNo);
-    preferences.putString("CH2_DeviceNo", CH2_DeviceNo);
-  }
-  return 0;
-}
-
-int DBCKSGHD(String SerialData, int dex1, int dexc, int end)
+int CH1_SETVAR(String SerialData, int dex1, int dexc, int end)
 {
   dexc = SerialData.indexOf(',');
-  String Channel = SerialData.substring(dex1 + 1, dexc);
-  String Number = SerialData.substring(dexc + 1, end);
-  int Number_int = Number.toInt();
-  int Channel_int = Channel.toInt();
-  if (Channel_int == 1)
+  String command = SerialData.substring(dex1 + 1, dexc);
+  String Number = SerialData.substring(dexc + 1, end - 1);
+  if(command == "DeviceNo")
   {
-    preferences.putBool("CH1_Live", Number_int);
-    Serial.print("cksghd_ch1 : ");
+    Serial.print("CH1_DeviceNo : ");
+    Serial.println(Number);
+    preferences.putString("CH1_DeviceNo", Number);
   }
-  else if (Channel_int == 2)
+  else if(command == "Current_Wash")
   {
-    preferences.putBool("CH2_Live", Number_int);
-    Serial.print("cksghd_ch2 : ");
+    Serial.print("CH1_Curr_W : ");
+    Serial.println(Number);
+    float var = Number.toFloat();
+    preferences.putFloat("CH1_Curr_W", var);
   }
-  Serial.println(Number_int);
-  return 0;
-}
-
-int SETDEL_WSH(String SerialData, int dex1, int end)
-{
-  String Time = SerialData.substring(dex1 + 1, end);
-  int Time_int = Time.toInt();
-  if (Time_int < 255)
+  else if(command == "Flow_Wash")
   {
-    preferences.putUInt("CH1_EndDelay_Wash", Time_int);
-    Serial.print("TimeSet : ");
-    Serial.println(Time_int);
+    Serial.print("CH1_Flow_W : ");
+    Serial.println(Number);
+    int var = Number.toInt();
+    preferences.putUInt("CH1_Flow_W", var);
+  }
+  else if(command == "Current_Dry")
+  {
+    Serial.print("CH1_Curr_D : ");
+    Serial.println(Number);
+    float var = Number.toFloat();
+    preferences.putFloat("CH1_Curr_D", var);
+  }
+  else if(command == "EndDelay_Wash")
+  {
+    Serial.print("CH1_EndDelay_W : ");
+    Serial.println(Number);
+    int var = Number.toInt();
+    preferences.putUInt("CH1_EndDelay_W", var);
+  }
+  else if(command == "EndDelay_Dry")
+  {
+    Serial.print("CH1_EndDelay_D : ");
+    Serial.println(Number);
+    int var = Number.toInt();
+    preferences.putUInt("CH1_EndDelay_D", var);
+  }
+  else if(command == "Enable")
+  {
+    Serial.print("CH1_Enable : ");
+    Serial.println(Number);
+    int var = Number.toInt();
+    preferences.putBool("CH1_Live", var);
   }
   else
   {
-    Serial.println("OverFlow");
+    Serial.print("Command Not Found for : ");
+    Serial.println(command);
   }
   return 0;
 }
 
-int SETDEL_DRY(String SerialData, int dex1, int end)
+int CH2_SETVAR(String SerialData, int dex1, int dexc, int end)
 {
-  String Time = SerialData.substring(dex1 + 1, end);
-  int Time_int = Time.toInt();
-  if (Time_int < 255)
+  dexc = SerialData.indexOf(',');
+  String command = SerialData.substring(dex1 + 1, dexc);
+  String Number = SerialData.substring(dexc + 1, end - 1);
+  if(command == "DeviceNo")
   {
-    preferences.putUInt("CH1_EndDelay_Dry", Time_int);
-    Serial.print("TimeSet : ");
-    Serial.println(Time_int);
+    Serial.print("CH2_DeviceNo : ");
+    Serial.println(Number);
+    preferences.putString("CH2_DeviceNo", Number);
+  }
+  else if(command == "Current_Wash")
+  {
+    Serial.print("CH2_Curr_W : ");
+    Serial.println(Number);
+    float var = Number.toFloat();
+    preferences.putFloat("CH2_Curr_W", var);
+  }
+  else if(command == "Flow_Wash")
+  {
+    Serial.print("CH2_Flow_W : ");
+    Serial.println(Number);
+    int var = Number.toInt();
+    preferences.putUInt("CH2_Flow_W", var);
+  }
+  else if(command == "Current_Dry")
+  {
+    Serial.print("CH2_Curr_D : ");
+    Serial.println(Number);
+    float var = Number.toFloat();
+    preferences.putFloat("CH2_Curr_D", var);
+  }
+  else if(command == "EndDelay_Wash")
+  {
+    Serial.print("CH2_EndDelay_W : ");
+    Serial.println(Number);
+    int var = Number.toInt();
+    preferences.putUInt("CH2_EndDelay_W", var);
+  }
+  else if(command == "EndDelay_Dry")
+  {
+    Serial.print("CH2_EndDelay_D : ");
+    Serial.println(Number);
+    int var = Number.toInt();
+    preferences.putUInt("CH2_EndDelay_D", var);
+  }
+  else if(command == "Enable")
+  {
+    Serial.print("CH2_Enable : ");
+    Serial.println(Number);
+    int var = Number.toInt();
+    preferences.putBool("CH2_Live", var);
   }
   else
   {
-    Serial.println("OverFlow");
+    Serial.print("Command Not Found for : ");
+    Serial.println(command);
   }
   return 0;
 }
@@ -762,9 +798,9 @@ int NOWSTATE()
 //=================================================================Status_Judgment모드
 void Dryer_Status_Judgment(float Amps_TRMS, int cnt, int m, unsigned long previousMillis_end, int ChannelNum)
 {
-  if (ChannelNum == 1 && Amps_TRMS > Ch1_Current_Dry)
+  if (ChannelNum == 1 && Amps_TRMS > CH1_Curr_D)
   {
-    if (cnt == 1) // 건조기 동작 시작
+    if (cnt == 1) // CH1 건조기 동작 시작
     {
       CH1_Cnt = 0;
       digitalWrite(PIN_CH1_LED, HIGH);
@@ -776,9 +812,9 @@ void Dryer_Status_Judgment(float Amps_TRMS, int cnt, int m, unsigned long previo
     }
     m1 = 1;
   }
-  else if (ChannelNum == 2 && Amps_TRMS > Ch2_Current_Dry)
+  else if (ChannelNum == 2 && Amps_TRMS > CH2_Curr_D)
   {
-    if (cnt == 1) // 건조기 동작 시작
+    if (cnt == 1) // CH2 건조기 동작 시작
     {
       CH2_Cnt = 0;
       digitalWrite(PIN_CH2_LED, HIGH);
@@ -807,7 +843,7 @@ void Dryer_Status_Judgment(float Amps_TRMS, int cnt, int m, unsigned long previo
     }
     else if (cnt)
       ;
-    else if (ChannelNum == 1 && millis() - previousMillis_end >= CH1_EndDelay_Dry) // CH1 건조기 동작 종료
+    else if (ChannelNum == 1 && millis() - previousMillis_end >= CH1_EndDelay_D) // CH1 건조기 동작 종료
     {
       Serial.println("CH1 Dryer Ended");
       SendStatus(1, 1);
@@ -815,7 +851,7 @@ void Dryer_Status_Judgment(float Amps_TRMS, int cnt, int m, unsigned long previo
       digitalWrite(PIN_CH1_LED, LOW);
       CH1_CurrStatus = 1;
     }
-    else if (ChannelNum == 2 && millis() - previousMillis_end >= CH2_EndDelay_Dry) // CH2 건조기 동작 종료
+    else if (ChannelNum == 2 && millis() - previousMillis_end >= CH2_EndDelay_D) // CH2 건조기 동작 종료
     {
       Serial.println("CH2 Dryer Ended");
       SendStatus(2, 1);
@@ -828,30 +864,32 @@ void Dryer_Status_Judgment(float Amps_TRMS, int cnt, int m, unsigned long previo
 
 void Status_Judgment(float Amps_TRMS, int WaterSensorData, unsigned int l_hour, int cnt, int m, unsigned long previousMillis_end, int ChannelNum)
 {
-  if (Amps_TRMS > 0.5 || WaterSensorData || l_hour > 50)
+  if (ChannelNum == 1 && (Amps_TRMS > CH1_Curr_W || WaterSensorData || l_hour > CH1_Flow_W))
   {
     if (cnt == 1) // 세탁기 동작 시작
     {
-      if (ChannelNum == 1)
-      {
-        CH1_Cnt = 0;
-        digitalWrite(PIN_CH1_LED, HIGH);
-        CH1_CurrStatus = 0;
-      }
-      if (ChannelNum == 2)
-      {
-        CH2_Cnt = 0;
-        digitalWrite(PIN_CH2_LED, HIGH);
-        CH2_CurrStatus = 0;
-      }
+      CH1_Cnt = 0;
+      digitalWrite(PIN_CH1_LED, HIGH);
+      CH1_CurrStatus = 0;
       Serial.print("CH");
       Serial.print(ChannelNum);
       Serial.println(" Washer Started");
       SendStatus(ChannelNum, 0);
     }
-    if (ChannelNum == 1)
       m1 = 1;
-    if (ChannelNum == 2)
+  }
+  if (ChannelNum == 2 && (Amps_TRMS > CH2_Curr_W || WaterSensorData || l_hour > CH2_Flow_W))
+  {
+    if (cnt == 1) // 세탁기 동작 시작
+    {
+      CH2_Cnt = 0;
+      digitalWrite(PIN_CH2_LED, HIGH);
+      CH2_CurrStatus = 0;
+      Serial.print("CH");
+      Serial.print(ChannelNum);
+      Serial.println(" Washer Started");
+      SendStatus(ChannelNum, 0);
+    }
       m2 = 1;
   }
   else
@@ -871,7 +909,7 @@ void Status_Judgment(float Amps_TRMS, int WaterSensorData, unsigned int l_hour, 
     }
     else if (cnt)
       ;
-    else if (ChannelNum == 1 && millis() - previousMillis_end >= CH1_EndDelay_Wash) // CH1 세탁기 동작 종료
+    else if (ChannelNum == 1 && millis() - previousMillis_end >= CH1_EndDelay_W) // CH1 세탁기 동작 종료
     {
       Serial.println("CH1 Washer Ended");
       SendStatus(1, 1);
@@ -879,7 +917,7 @@ void Status_Judgment(float Amps_TRMS, int WaterSensorData, unsigned int l_hour, 
       digitalWrite(PIN_CH1_LED, LOW);
       CH1_CurrStatus = 1;
     }
-    else if (ChannelNum == 2 && millis() - previousMillis_end >= CH2_EndDelay_Wash) // CH2 세탁기 동작 종료
+    else if (ChannelNum == 2 && millis() - previousMillis_end >= CH2_EndDelay_W) // CH2 세탁기 동작 종료
     {
       Serial.println("CH2 Washer Ended");
       SendStatus(2, 1);
@@ -901,17 +939,17 @@ void SetDefaultVal()
   CH1_DeviceNo = preferences.getString("CH1_DeviceNo", "1");
   CH2_DeviceNo = preferences.getString("CH2_DeviceNo", "2");
 
-  CH1_Current_Wash = preferences.getFloat("CH1_Current_Wash", 0.2);
-  CH2_Current_Wash = preferences.getFloat("CH2_Current_Wash", 0.2);
-  CH1_Flow_Wash = preferences.getUInt("CH1_Flow_Wash", 50);
-  CH2_Flow_Wash = preferences.getUInt("CH2_Flow_Wash", 50);
-  Ch1_Current_Dry = preferences.getFloat("Ch1_Current_Dry", 0.5);
-  Ch2_Current_Dry = preferences.getFloat("Ch2_Current_Dry", 0.5);
+  CH1_Curr_W = preferences.getFloat("CH1_Curr_W", 0.2);
+  CH2_Curr_W = preferences.getFloat("CH2_Curr_W", 0.2);
+  CH1_Flow_W = preferences.getUInt("CH1_Flow_W", 50);
+  CH2_Flow_W = preferences.getUInt("CH2_Flow_W", 50);
+  CH1_Curr_D = preferences.getFloat("CH1_Curr_D", 0.5);
+  CH2_Curr_D = preferences.getFloat("CH2_Curr_D", 0.5);
 
-  CH1_EndDelay_Wash = preferences.getUInt("CH1_EndDelay_Wash", 10);
-  CH2_EndDelay_Wash = preferences.getUInt("CH2_EndDelay_Wash", 10);
-  CH1_EndDelay_Dry = preferences.getUInt("CH1_EndDelay_Dry", 10);
-  CH2_EndDelay_Dry = preferences.getUInt("CH2_EndDelay_Dry", 10);
+  CH1_EndDelay_W = preferences.getUInt("CH1_EndDelay_W", 10);
+  CH2_EndDelay_W = preferences.getUInt("CH2_EndDelay_W", 10);
+  CH1_EndDelay_D = preferences.getUInt("CH1_EndDelay_D", 10);
+  CH2_EndDelay_D = preferences.getUInt("CH2_EndDelay_D", 10);
 
   CH1_Live = preferences.getBool("CH1_Live", true);
   CH2_Live = preferences.getBool("CH2_Live", true);
@@ -932,22 +970,39 @@ void SetDefaultVal()
   {
     Serial.println("NO WIFI SSID!!! YOU NEED TO CONFIG WIFI BY AT+SETAP_SSID AND AT+SETAP_PASSWD IN DEBUG MODE!!!");
   }
-  CH1_EndDelay_Wash *= 10000;
-  CH2_EndDelay_Wash *= 10000;
-  CH1_EndDelay_Dry *= 1000;
-  CH2_EndDelay_Dry *= 1000;
-  Serial.print("Ch1_Current_Dry : ");
-  Serial.print(Ch1_Current_Dry);
-  Serial.print(" Ch2_Current_Dry : ");
-  Serial.print(Ch2_Current_Dry);
-  Serial.print(" CH1_Delay_WSH : ");
-  Serial.print(CH1_EndDelay_Wash);
-  Serial.print(" CH2_Delay_WSH : ");
-  Serial.print(CH2_EndDelay_Wash);
-  Serial.print(" CH1_Delay_Dry : ");
-  Serial.print(CH1_EndDelay_Dry);
+  CH1_EndDelay_W *= 10000;
+  CH2_EndDelay_W *= 10000;
+  CH1_EndDelay_D *= 1000;
+  CH2_EndDelay_D *= 1000;
+  Serial.print("CH1_Curr_Wash : ");
+  Serial.print(CH1_Curr_W);
+  Serial.print(" CH2_Curr_Wash : ");
+  Serial.println(CH2_Curr_W);
+
+  Serial.print("CH1_Flow_Wash : ");
+  Serial.print(CH1_Flow_W);
+  Serial.print(" CH2_Flow_Wash : ");
+  Serial.println(CH2_Flow_W);
+
+  Serial.print("CH1_Delay_Wash : ");
+  Serial.print(CH1_EndDelay_W);
+  Serial.print(" CH2_Delay_Wash : ");
+  Serial.println(CH2_EndDelay_W);
+
+  Serial.print("CH1_Curr_Dry : ");
+  Serial.print(CH1_Curr_D);
+  Serial.print(" CH2_Curr_Dry : ");
+  Serial.println(CH2_Curr_D);
+
+  Serial.print("CH1_Delay_Dry : ");
+  Serial.print(CH1_EndDelay_D);
   Serial.print(" CH2_Delay_Dry : ");
-  Serial.println(CH2_EndDelay_Dry);
+  Serial.println(CH2_EndDelay_D);
+
+  Serial.print("CH1_Enable : ");
+  Serial.print(CH1_Live);
+  Serial.print(" CH2_Enable : ");
+  Serial.println(CH1_Live);
 }
 
 void NETWORK_INFO()
