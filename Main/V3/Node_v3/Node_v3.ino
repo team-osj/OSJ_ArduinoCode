@@ -191,7 +191,7 @@ void webSocketEvent(WStype_t type, uint8_t *payload, size_t length)
     String title = doc["title"];
     if (title == "GetData")
     {
-      StaticJsonDocument<500> MyStatus;
+      StaticJsonDocument<600> MyStatus;
       MyStatus["title"] = "GetData";
       if (mode_debug)
       {
@@ -238,7 +238,7 @@ void webSocketEvent(WStype_t type, uint8_t *payload, size_t length)
       MyStatus["CH1_Flow_W"] = CH1_Flow_W;
       MyStatus["CH2_Flow_W"] = CH2_Flow_W;  
       MyStatus["CH1_Curr_D"] = CH1_Curr_D;
-      MyStatus["CH1_Curr_D"] = CH2_Curr_D;  
+      MyStatus["CH2_Curr_D"] = CH2_Curr_D;  
       MyStatus["CH1_EndDelay_W"] = CH1_EndDelay_W;
       MyStatus["CH2_EndDelay_W"] = CH2_EndDelay_W;
       MyStatus["CH1_EndDelay_D"] = CH1_EndDelay_D;
@@ -255,6 +255,7 @@ void webSocketEvent(WStype_t type, uint8_t *payload, size_t length)
       MyStatus["wifi_rssi"] = WiFi.RSSI();
       MyStatus["wifi_ip"] = WiFi.localIP().toString();
       MyStatus["mac"] = WiFi.macAddress();
+      MyStatus["fw_ver"] = build_date;
       String MyStatus_String;
       serializeJson(MyStatus, MyStatus_String);
       webSocket.sendTXT(MyStatus_String);
@@ -302,6 +303,8 @@ void setup()
 {
   preferences.begin("config", false);
   Serial.begin(115200);
+  Serial.print("FW_VER : ");
+  Serial.println(build_date);
   pinMode(PIN_STATUS, OUTPUT);         // STATUS
   pinMode(PIN_CH1_LED, OUTPUT);        // CH1
   pinMode(PIN_CH2_LED, OUTPUT);        // CH2
