@@ -2,7 +2,6 @@
 #include <time.h>
 #include <stdlib.h>
 #include <string.h>
-
 #include <WiFi.h>
 #include <WiFiClientSecure.h>
 #include <WebSocketsClient.h>
@@ -12,6 +11,7 @@
 #include "ServerInfo.h"
 #include "EmonLib.h"
 
+//GPIO Define
 #define PIN_STATUS 17
 #define PIN_CH1_LED 18
 #define PIN_CH2_LED 19
@@ -798,7 +798,7 @@ int NOWSTATE()
   return 0;
 }
 
-//=================================================================Status_Judgment모드
+//건조기 동작 판단
 void Dryer_Status_Judgment(float Amps_TRMS, int cnt, int m, unsigned long previousMillis_end, int ChannelNum)
 {
   if (ChannelNum == 1 && Amps_TRMS > CH1_Curr_D)
@@ -865,6 +865,7 @@ void Dryer_Status_Judgment(float Amps_TRMS, int cnt, int m, unsigned long previo
   }
 }
 
+//세탁기 동작 판단
 void Status_Judgment(float Amps_TRMS, int WaterSensorData, unsigned int l_hour, int cnt, int m, unsigned long previousMillis_end, int ChannelNum)
 {
   if (ChannelNum == 1 && (Amps_TRMS > CH1_Curr_W || WaterSensorData || l_hour > CH1_Flow_W))
