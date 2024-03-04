@@ -141,22 +141,22 @@ const char *WiFiStatusCode(wl_status_t status)
 {
   switch (status)
   {
-  case WL_NO_SHIELD:
-    return "WL_NO_SHIELD";
-  case WL_IDLE_STATUS:
-    return "WL_IDLE_STATUS";
-  case WL_NO_SSID_AVAIL:
-    return "WL_NO_SSID_AVAIL";
-  case WL_SCAN_COMPLETED:
-    return "WL_SCAN_COMPLETED";
-  case WL_CONNECTED:
-    return "WL_CONNECTED";
-  case WL_CONNECT_FAILED:
-    return "WL_CONNECT_FAILED";
-  case WL_CONNECTION_LOST:
-    return "WL_CONNECTION_LOST";
-  case WL_DISCONNECTED:
-    return "WL_DISCONNECTED";
+    case WL_NO_SHIELD:
+      return "WL_NO_SHIELD";
+    case WL_IDLE_STATUS:
+      return "WL_IDLE_STATUS";
+    case WL_NO_SSID_AVAIL:
+      return "WL_NO_SSID_AVAIL";
+    case WL_SCAN_COMPLETED:
+      return "WL_SCAN_COMPLETED";
+    case WL_CONNECTED:
+      return "WL_CONNECTED";
+    case WL_CONNECT_FAILED:
+      return "WL_CONNECT_FAILED";
+    case WL_CONNECTION_LOST:
+      return "WL_CONNECTION_LOST";
+    case WL_DISCONNECTED:
+      return "WL_DISCONNECTED";
   }
 }
 
@@ -165,110 +165,110 @@ void webSocketEvent(WStype_t type, uint8_t *payload, size_t length)
 
   switch (type)
   {
-  case WStype_DISCONNECTED:
-    Serial.printf("[WSc] Disconnected!\n");
-    break;
-  case WStype_CONNECTED:
-  {
-    Serial.printf("[WSc] Connected to url: %s\n", payload);
-    if (mode_debug)
-    {
-      if (CH1_Live == true)
+    case WStype_DISCONNECTED:
+      Serial.printf("[WSc] Disconnected!\n");
+      break;
+    case WStype_CONNECTED:
       {
-        SendStatus(1, CH1_CurrStatus);
+        Serial.printf("[WSc] Connected to url: %s\n", payload);
+        if (mode_debug)
+        {
+          if (CH1_Live == true)
+          {
+            SendStatus(1, CH1_CurrStatus);
+          }
+          if (CH2_Live == true)
+          {
+            SendStatus(2, CH2_CurrStatus);
+          }
+        }
       }
-      if (CH2_Live == true)
+      break;
+    case WStype_TEXT:
       {
-        SendStatus(2, CH2_CurrStatus);
+        Serial.printf("[WSc] get text: %s\n", payload);
+        deserializeJson(doc, payload);
+        String title = doc["title"];
+        if (title == "GetData")
+        {
+          StaticJsonDocument<600> MyStatus;
+          MyStatus["title"] = "GetData";
+          if (mode_debug)
+          {
+            MyStatus["debug"] = "No";
+          }
+          else
+          {
+            MyStatus["debug"] = "Yes";
+          }
+          if (CH1_Mode)
+          {
+            MyStatus["ch1_mode"] = "Wash";
+          }
+          else
+          {
+            MyStatus["ch1_mode"] = "Dry";
+          }
+          if (CH2_Mode)
+          {
+            MyStatus["ch2_mode"] = "Wash";
+          }
+          else
+          {
+            MyStatus["ch2_mode"] = "Dry";
+          }
+          if (CH1_CurrStatus)
+          {
+            MyStatus["ch1_status"] = "Not Working";
+          }
+          else
+          {
+            MyStatus["ch1_status"] = "Working";
+          }
+          if (CH2_CurrStatus)
+          {
+            MyStatus["ch2_status"] = "Not Working";
+          }
+          else
+          {
+            MyStatus["ch2_status"] = "Working";
+          }
+          MyStatus["CH1_Curr_W"] = CH1_Curr_W;
+          MyStatus["CH2_Curr_W"] = CH2_Curr_W;
+          MyStatus["CH1_Flow_W"] = CH1_Flow_W;
+          MyStatus["CH2_Flow_W"] = CH2_Flow_W;
+          MyStatus["CH1_Curr_D"] = CH1_Curr_D;
+          MyStatus["CH2_Curr_D"] = CH2_Curr_D;
+          MyStatus["CH1_EndDelay_W"] = CH1_EndDelay_W;
+          MyStatus["CH2_EndDelay_W"] = CH2_EndDelay_W;
+          MyStatus["CH1_EndDelay_D"] = CH1_EndDelay_D;
+          MyStatus["CH2_EndDelay_D"] = CH2_EndDelay_D;
+          MyStatus["ch1_deviceno"] = CH1_DeviceNo;
+          MyStatus["ch2_deviceno"] = CH2_DeviceNo;
+          MyStatus["ch1_current"] = Amps_TRMS1;
+          MyStatus["ch2_current"] = Amps_TRMS2;
+          MyStatus["ch1_flow"] = l_hour1;
+          MyStatus["ch2_flow"] = l_hour2;
+          MyStatus["ch1_drain"] = WaterSensorData1;
+          MyStatus["ch2_drain"] = WaterSensorData2;
+          MyStatus["wifi_ssid"] = ap_ssid;
+          MyStatus["wifi_rssi"] = WiFi.RSSI();
+          MyStatus["wifi_ip"] = WiFi.localIP().toString();
+          MyStatus["mac"] = WiFi.macAddress();
+          MyStatus["fw_ver"] = build_date;
+          String MyStatus_String;
+          serializeJson(MyStatus, MyStatus_String);
+          webSocket.sendTXT(MyStatus_String);
+        }
       }
-    }
-  }
-  break;
-  case WStype_TEXT:
-  {
-    Serial.printf("[WSc] get text: %s\n", payload);
-    deserializeJson(doc, payload);
-    String title = doc["title"];
-    if (title == "GetData")
-    {
-      StaticJsonDocument<600> MyStatus;
-      MyStatus["title"] = "GetData";
-      if (mode_debug)
-      {
-        MyStatus["debug"] = "No";
-      }
-      else
-      {
-        MyStatus["debug"] = "Yes";
-      }
-      if (CH1_Mode)
-      {
-        MyStatus["ch1_mode"] = "Wash";
-      }
-      else
-      {
-        MyStatus["ch1_mode"] = "Dry";
-      }
-      if (CH2_Mode)
-      {
-        MyStatus["ch2_mode"] = "Wash";
-      }
-      else
-      {
-        MyStatus["ch2_mode"] = "Dry";
-      }
-      if (CH1_CurrStatus)
-      {
-        MyStatus["ch1_status"] = "Not Working";
-      }
-      else
-      {
-        MyStatus["ch1_status"] = "Working";
-      }
-      if (CH2_CurrStatus)
-      {
-        MyStatus["ch2_status"] = "Not Working";
-      }
-      else
-      {
-        MyStatus["ch2_status"] = "Working";
-      }
-      MyStatus["CH1_Curr_W"] = CH1_Curr_W;
-      MyStatus["CH2_Curr_W"] = CH2_Curr_W;
-      MyStatus["CH1_Flow_W"] = CH1_Flow_W;
-      MyStatus["CH2_Flow_W"] = CH2_Flow_W;  
-      MyStatus["CH1_Curr_D"] = CH1_Curr_D;
-      MyStatus["CH2_Curr_D"] = CH2_Curr_D;  
-      MyStatus["CH1_EndDelay_W"] = CH1_EndDelay_W;
-      MyStatus["CH2_EndDelay_W"] = CH2_EndDelay_W;
-      MyStatus["CH1_EndDelay_D"] = CH1_EndDelay_D;
-      MyStatus["CH2_EndDelay_D"] = CH2_EndDelay_D;
-      MyStatus["ch1_deviceno"] = CH1_DeviceNo;
-      MyStatus["ch2_deviceno"] = CH2_DeviceNo;
-      MyStatus["ch1_current"] = Amps_TRMS1;
-      MyStatus["ch2_current"] = Amps_TRMS2;
-      MyStatus["ch1_flow"] = l_hour1;
-      MyStatus["ch2_flow"] = l_hour2;
-      MyStatus["ch1_drain"] = WaterSensorData1;
-      MyStatus["ch2_drain"] = WaterSensorData2;
-      MyStatus["wifi_ssid"] = ap_ssid;
-      MyStatus["wifi_rssi"] = WiFi.RSSI();
-      MyStatus["wifi_ip"] = WiFi.localIP().toString();
-      MyStatus["mac"] = WiFi.macAddress();
-      MyStatus["fw_ver"] = build_date;
-      String MyStatus_String;
-      serializeJson(MyStatus, MyStatus_String);
-      webSocket.sendTXT(MyStatus_String);
-    }
-  }
-  break;
-  case WStype_BIN:
-  case WStype_ERROR:
-  case WStype_FRAGMENT_TEXT_START:
-  case WStype_FRAGMENT_BIN_START:
-  case WStype_FRAGMENT:
-  case WStype_FRAGMENT_FIN:
-    break;
+      break;
+    case WStype_BIN:
+    case WStype_ERROR:
+    case WStype_FRAGMENT_TEXT_START:
+    case WStype_FRAGMENT_BIN_START:
+    case WStype_FRAGMENT:
+    case WStype_FRAGMENT_FIN:
+      break;
   }
 }
 
@@ -325,7 +325,7 @@ void setup()
   mode_debug = digitalRead(PIN_DEBUG);
   CH1_Mode = digitalRead(PIN_CH1_MODE);
   CH2_Mode = digitalRead(PIN_CH2_MODE);
-  if(mode_debug == 0)
+  if (mode_debug == 0)
   {
     Serial.println("YOU ARE IN THE DEBUG MODE !!!");
   }
@@ -675,48 +675,48 @@ int CH1_SETVAR(String SerialData, int dex1, int dexc, int end)
   dexc = SerialData.indexOf(',');
   String command = SerialData.substring(dex1 + 1, dexc);
   String Number = SerialData.substring(dexc + 1, end - 1);
-  if(command == "DeviceNo")
+  if (command == "DeviceNo")
   {
     Serial.print("CH1_DeviceNo : ");
     Serial.println(Number);
     preferences.putString("CH1_DeviceNo", Number);
   }
-  else if(command == "Current_Wash")
+  else if (command == "Current_Wash")
   {
     Serial.print("CH1_Curr_W : ");
     Serial.println(Number);
     float var = Number.toFloat();
     preferences.putFloat("CH1_Curr_W", var);
   }
-  else if(command == "Flow_Wash")
+  else if (command == "Flow_Wash")
   {
     Serial.print("CH1_Flow_W : ");
     Serial.println(Number);
     int var = Number.toInt();
     preferences.putUInt("CH1_Flow_W", var);
   }
-  else if(command == "Current_Dry")
+  else if (command == "Current_Dry")
   {
     Serial.print("CH1_Curr_D : ");
     Serial.println(Number);
     float var = Number.toFloat();
     preferences.putFloat("CH1_Curr_D", var);
   }
-  else if(command == "EndDelay_Wash")
+  else if (command == "EndDelay_Wash")
   {
     Serial.print("CH1_EndDelay_W : ");
     Serial.println(Number);
     int var = Number.toInt();
     preferences.putUInt("CH1_EndDelay_W", var);
   }
-  else if(command == "EndDelay_Dry")
+  else if (command == "EndDelay_Dry")
   {
     Serial.print("CH1_EndDelay_D : ");
     Serial.println(Number);
     int var = Number.toInt();
     preferences.putUInt("CH1_EndDelay_D", var);
   }
-  else if(command == "Enable")
+  else if (command == "Enable")
   {
     Serial.print("CH1_Enable : ");
     Serial.println(Number);
@@ -736,48 +736,48 @@ int CH2_SETVAR(String SerialData, int dex1, int dexc, int end)
   dexc = SerialData.indexOf(',');
   String command = SerialData.substring(dex1 + 1, dexc);
   String Number = SerialData.substring(dexc + 1, end - 1);
-  if(command == "DeviceNo")
+  if (command == "DeviceNo")
   {
     Serial.print("CH2_DeviceNo : ");
     Serial.println(Number);
     preferences.putString("CH2_DeviceNo", Number);
   }
-  else if(command == "Current_Wash")
+  else if (command == "Current_Wash")
   {
     Serial.print("CH2_Curr_W : ");
     Serial.println(Number);
     float var = Number.toFloat();
     preferences.putFloat("CH2_Curr_W", var);
   }
-  else if(command == "Flow_Wash")
+  else if (command == "Flow_Wash")
   {
     Serial.print("CH2_Flow_W : ");
     Serial.println(Number);
     int var = Number.toInt();
     preferences.putUInt("CH2_Flow_W", var);
   }
-  else if(command == "Current_Dry")
+  else if (command == "Current_Dry")
   {
     Serial.print("CH2_Curr_D : ");
     Serial.println(Number);
     float var = Number.toFloat();
     preferences.putFloat("CH2_Curr_D", var);
   }
-  else if(command == "EndDelay_Wash")
+  else if (command == "EndDelay_Wash")
   {
     Serial.print("CH2_EndDelay_W : ");
     Serial.println(Number);
     int var = Number.toInt();
     preferences.putUInt("CH2_EndDelay_W", var);
   }
-  else if(command == "EndDelay_Dry")
+  else if (command == "EndDelay_Dry")
   {
     Serial.print("CH2_EndDelay_D : ");
     Serial.println(Number);
     int var = Number.toInt();
     preferences.putUInt("CH2_EndDelay_D", var);
   }
-  else if(command == "Enable")
+  else if (command == "Enable")
   {
     Serial.print("CH2_Enable : ");
     Serial.println(Number);
@@ -798,13 +798,35 @@ int NOWSTATE()
   return 0;
 }
 
+/*int dryer_prev_millis1 = 0;
+  int dryer_prev_millis2 = 0;
+  int dryer_cnt1 = 0;
+  int dryer_cnt2 = 0;*/
+
 //건조기 동작 판단
 void Dryer_Status_Judgment(float Amps_TRMS, int cnt, int m, unsigned long previousMillis_end, int ChannelNum)
 {
+  /*if (ChannelNum == 1 && Amps_TRMS > CH1_Curr_D && dryer_cnt1 == 0){ //전류가 흐르면 millis시작
+    dryer_cnt1 = 1;
+    dryer_prev_millis1 = millis();
+    }
+    if (ChannelNum == 1 && Amps_TRMS < CH1_Curr_D && dryer_cnt1 == 1){ //전류가 끊기면 cnt로 시작 취소
+    dryer_cnt1 = 0;
+    }
+
+    if (ChannelNum == 2 && Amps_TRMS > CH2_Curr_D && dryer_cnt2 == 0){
+    dryer_cnt2 = 1;
+    dryer_prev_millis2 = millis();
+    }
+    if (ChannelNum == 2 && Amps_TRMS < CH2_Curr_D && dryer_cnt2 == 1){
+    dryer_cnt2 = 0;
+    }*/
+
   if (ChannelNum == 1 && Amps_TRMS > CH1_Curr_D)
   {
     if (cnt == 1) // CH1 건조기 동작 시작
     {
+      //dryer_cnt1 = 0;
       CH1_Cnt = 0;
       digitalWrite(PIN_CH1_LED, HIGH);
       CH1_CurrStatus = 0;
@@ -819,6 +841,7 @@ void Dryer_Status_Judgment(float Amps_TRMS, int cnt, int m, unsigned long previo
   {
     if (cnt == 1) // CH2 건조기 동작 시작
     {
+      //dryer_cnt2 = 0;
       CH2_Cnt = 0;
       digitalWrite(PIN_CH2_LED, HIGH);
       CH2_CurrStatus = 0;
@@ -865,13 +888,36 @@ void Dryer_Status_Judgment(float Amps_TRMS, int cnt, int m, unsigned long previo
   }
 }
 
+int se_prev_millis1 = 0;
+int se_prev_millis2 = 0;
+int se_cnt1 = 0;
+int se_cnt2 = 0;
+
 //세탁기 동작 판단
 void Status_Judgment(float Amps_TRMS, int WaterSensorData, unsigned int l_hour, int cnt, int m, unsigned long previousMillis_end, int ChannelNum)
 {
-  if (ChannelNum == 1 && (Amps_TRMS > CH1_Curr_W || WaterSensorData || l_hour > CH1_Flow_W))
+  if (ChannelNum == 1 && (Amps_TRMS > CH1_Curr_W || WaterSensorData || l_hour > CH1_Flow_W) && se_cnt1 == 0) { //세탁기가 동작하면 millis시작
+    se_cnt1 = 1;
+    se_prev_millis1 = millis();
+  }
+  if (ChannelNum == 1 && (Amps_TRMS < CH1_Curr_W && !WaterSensorData && l_hour < CH1_Flow_W) && se_cnt1 == 1) { // 전부 멈추면 시작 취소
+    se_cnt1 = 0;
+  }
+
+  if (ChannelNum == 2 && (Amps_TRMS > CH2_Curr_W || WaterSensorData || l_hour > CH2_Flow_W) && se_cnt2 == 0) {
+    se_cnt2 = 1;
+    se_prev_millis2 = millis();
+  }
+  if (ChannelNum == 2 && (Amps_TRMS < CH2_Curr_W && !WaterSensorData && l_hour < CH2_Flow_W) && se_cnt2 == 1) {
+    se_cnt2 = 0;
+  }
+
+
+  if (ChannelNum == 1 && millis() - se_prev_millis1 >= 500 && se_cnt1 == 1)
   {
     if (cnt == 1) // CH1 세탁기 동작 시작
     {
+      se_cnt1 = 0;
       CH1_Cnt = 0;
       digitalWrite(PIN_CH1_LED, HIGH);
       CH1_CurrStatus = 0;
@@ -880,12 +926,13 @@ void Status_Judgment(float Amps_TRMS, int WaterSensorData, unsigned int l_hour, 
       Serial.println(" Washer Started");
       SendStatus(ChannelNum, 0);
     }
-      m1 = 1;
+    m1 = 1;
   }
-  if (ChannelNum == 2 && (Amps_TRMS > CH2_Curr_W || WaterSensorData || l_hour > CH2_Flow_W))
+  if (ChannelNum == 2 && millis() - se_prev_millis2 >= 500 && se_cnt2 == 1)
   {
     if (cnt == 1) // CH2 세탁기 동작 시작
     {
+      se_cnt2 = 0;
       CH2_Cnt = 0;
       digitalWrite(PIN_CH2_LED, HIGH);
       CH2_CurrStatus = 0;
@@ -894,7 +941,7 @@ void Status_Judgment(float Amps_TRMS, int WaterSensorData, unsigned int l_hour, 
       Serial.println(" Washer Started");
       SendStatus(ChannelNum, 0);
     }
-      m2 = 1;
+    m2 = 1;
   }
   else
   {
