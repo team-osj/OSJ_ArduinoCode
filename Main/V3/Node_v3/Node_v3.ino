@@ -807,7 +807,7 @@ void Dryer_Status_Judgment(float Amps_TRMS, int cnt, int m, unsigned long previo
     {
       CH1_Cnt = 0;
       digitalWrite(PIN_CH1_LED, HIGH);
-      CH2_CurrStatus = 0;
+      CH1_CurrStatus = 0;
       Serial.print("CH");
       Serial.print(ChannelNum);
       Serial.println(" Dryer Started");
@@ -870,7 +870,7 @@ void Status_Judgment(float Amps_TRMS, int WaterSensorData, unsigned int l_hour, 
 {
   if (ChannelNum == 1 && (Amps_TRMS > CH1_Curr_W || WaterSensorData || l_hour > CH1_Flow_W))
   {
-    if (cnt == 1) // 세탁기 동작 시작
+    if (cnt == 1) // CH1 세탁기 동작 시작
     {
       CH1_Cnt = 0;
       digitalWrite(PIN_CH1_LED, HIGH);
@@ -884,7 +884,7 @@ void Status_Judgment(float Amps_TRMS, int WaterSensorData, unsigned int l_hour, 
   }
   if (ChannelNum == 2 && (Amps_TRMS > CH2_Curr_W || WaterSensorData || l_hour > CH2_Flow_W))
   {
-    if (cnt == 1) // 세탁기 동작 시작
+    if (cnt == 1) // CH2 세탁기 동작 시작
     {
       CH2_Cnt = 0;
       digitalWrite(PIN_CH2_LED, HIGH);
