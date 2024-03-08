@@ -1255,7 +1255,7 @@ void SetDefaultVal()
   Serial.print("CH1_Enable : ");
   Serial.print(CH1_Live);
   Serial.print(" CH2_Enable : ");
-  Serial.println(CH1_Live);
+  Serial.println(CH2_Live);
 }
 
 void NETWORK_INFO()
