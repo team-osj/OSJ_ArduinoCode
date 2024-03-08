@@ -802,6 +802,20 @@ int NOWSTATE()
   int dryer_prev_millis2 = 0;
   int dryer_cnt1 = 0;
   int dryer_cnt2 = 0;*/
+int json_log_flag1 = 0;
+int json_log_flag2 = 0;
+int json_log_flag1_c = 0;
+int json_log_flag2_c = 0;
+int json_log_flag1_f = 0;
+int json_log_flag2_f = 0;
+int json_log_flag1_w = 0;
+int json_log_flag2_w = 0;
+int json_log_millis1 = 0;
+int json_log_millis2 = 0;
+int json_log_cnt1 = 1;
+int json_log_cnt2 = 1;
+DynamicJsonDocument json_log1(1024);
+DynamicJsonDocument json_log2(1024);
 
 //건조기 동작 판단
 void Dryer_Status_Judgment(float Amps_TRMS, int cnt, int m, unsigned long previousMillis_end, int ChannelNum)
@@ -821,11 +835,43 @@ void Dryer_Status_Judgment(float Amps_TRMS, int cnt, int m, unsigned long previo
     if (ChannelNum == 2 && Amps_TRMS < CH2_Curr_D && dryer_cnt2 == 1){
     dryer_cnt2 = 0;
     }*/
-
+  if (ChannelNum == 1 && Amps_TRMS < CH1_Curr_D && json_log_flag1) {
+    if (json_log_flag1_c == 1) {
+      json_log_flag1_c = 0;
+      String json_log_cnt1_string = String(json_log_cnt1);
+      json_log1[json_log_cnt1_string]["t"] = millis() - json_log_millis1;
+      json_log1[json_log_cnt1_string]["n"] = "C";
+      json_log1[json_log_cnt1_string]["s"] = 0;
+      json_log_cnt1++;
+    }
+  }
+  if (ChannelNum == 2 && Amps_TRMS < CH2_Curr_D && json_log_flag2) {
+    if (json_log_flag2_c == 1) {
+      json_log_flag2_c = 0;
+      String json_log_cnt2_string = String(json_log_cnt2);
+      json_log2[json_log_cnt2_string]["t"] = millis() - json_log_millis2;
+      json_log2[json_log_cnt2_string]["n"] = "C";
+      json_log2[json_log_cnt2_string]["s"] = 0;
+      json_log_cnt2++;
+    }
+  }
   if (ChannelNum == 1 && Amps_TRMS > CH1_Curr_D)
   {
+    if (json_log_flag1) {
+      if (json_log_flag1_c == 0) {
+        json_log_flag1_c = 1;
+        String json_log_cnt1_string = String(json_log_cnt1);
+        json_log1[json_log_cnt1_string]["t"] = millis() - json_log_millis1;
+        json_log1[json_log_cnt1_string]["n"] = "C";
+        json_log1[json_log_cnt1_string]["s"] = 1;
+        json_log_cnt1++;
+      }
+    }
     if (cnt == 1) // CH1 건조기 동작 시작
     {
+      json_log_flag1 = 1;
+      json_log_cnt1 = 1;
+      json_log_millis1 = millis();
       //dryer_cnt1 = 0;
       CH1_Cnt = 0;
       digitalWrite(PIN_CH1_LED, HIGH);
@@ -839,8 +885,21 @@ void Dryer_Status_Judgment(float Amps_TRMS, int cnt, int m, unsigned long previo
   }
   else if (ChannelNum == 2 && Amps_TRMS > CH2_Curr_D)
   {
+    if (json_log_flag2) {
+      if (json_log_flag2_c == 0) {
+        json_log_flag2_c = 1;
+        String json_log_cnt2_string = String(json_log_cnt2);
+        json_log2[json_log_cnt2_string]["t"] = millis() - json_log_millis2;
+        json_log2[json_log_cnt2_string]["n"] = "C";
+        json_log2[json_log_cnt2_string]["s"] = 1;
+        json_log_cnt2++;
+      }
+    }
     if (cnt == 1) // CH2 건조기 동작 시작
     {
+      json_log_flag2 = 1;
+      json_log_cnt2 = 1;
+      json_log_millis2 = millis();
       //dryer_cnt2 = 0;
       CH2_Cnt = 0;
       digitalWrite(PIN_CH2_LED, HIGH);
@@ -871,6 +930,12 @@ void Dryer_Status_Judgment(float Amps_TRMS, int cnt, int m, unsigned long previo
       ;
     else if (ChannelNum == 1 && millis() - previousMillis_end >= CH1_EndDelay_D) // CH1 건조기 동작 종료
     {
+      json_log_flag1_c = 0;
+      json_log_flag1 = 0;
+      String json_log_data1 = "";
+      serializeJson(json_log1, json_log_data1);
+      Serial.println(json_log_data1);
+      json_log_data1.clear();
       Serial.println("CH1 Dryer Ended");
       SendStatus(1, 1);
       CH1_Cnt = 1;
@@ -879,6 +944,12 @@ void Dryer_Status_Judgment(float Amps_TRMS, int cnt, int m, unsigned long previo
     }
     else if (ChannelNum == 2 && millis() - previousMillis_end >= CH2_EndDelay_D) // CH2 건조기 동작 종료
     {
+      json_log_flag2_c = 0;
+      json_log_flag2 = 0;
+      String json_log_data2 = "";
+      serializeJson(json_log2, json_log_data2);
+      Serial.println(json_log_data2);
+      json_log_data2.clear();
       Serial.println("CH2 Dryer Ended");
       SendStatus(2, 1);
       CH2_Cnt = 1;
@@ -912,11 +983,123 @@ void Status_Judgment(float Amps_TRMS, int WaterSensorData, unsigned int l_hour, 
     se_cnt2 = 0;
   }
 
+  if (ChannelNum == 1) {
+    if (json_log_flag1) {
+      if (Amps_TRMS > CH1_Curr_W && json_log_flag1_c == 0) {
+        json_log_flag1_c = 1;
+        String json_log_cnt1_string = String(json_log_cnt1);
+        json_log1[json_log_cnt1_string]["t"] = millis() - json_log_millis1;
+        json_log1[json_log_cnt1_string]["n"] = "C";
+        json_log1[json_log_cnt1_string]["s"] = 1;
+        json_log_cnt1++;
+      }
+      if (Amps_TRMS < CH1_Curr_W && json_log_flag1_c == 1) {
+        json_log_flag1_c = 0;
+        String json_log_cnt1_string = String(json_log_cnt1);
+        json_log1[json_log_cnt1_string]["t"] = millis() - json_log_millis1;
+        json_log1[json_log_cnt1_string]["n"] = "C";
+        json_log1[json_log_cnt1_string]["s"] = 0;
+        json_log_cnt1++;
+      }
+
+      if (l_hour > CH1_Flow_W && json_log_flag1_f == 0) {
+        json_log_flag1_f = 1;
+        String json_log_cnt1_string = String(json_log_cnt1);
+        json_log1[json_log_cnt1_string]["t"] = millis() - json_log_millis1;
+        json_log1[json_log_cnt1_string]["n"] = "F";
+        json_log1[json_log_cnt1_string]["s"] = 1;
+        json_log_cnt1++;
+      }
+      if (l_hour < CH1_Flow_W && json_log_flag1_f == 1) {
+        json_log_flag1_f = 0;
+        String json_log_cnt1_string = String(json_log_cnt1);
+        json_log1[json_log_cnt1_string]["t"] = millis() - json_log_millis1;
+        json_log1[json_log_cnt1_string]["n"] = "F";
+        json_log1[json_log_cnt1_string]["s"] = 0;
+        json_log_cnt1++;
+      }
+
+      if (WaterSensorData && json_log_flag1_w == 0) {
+        json_log_flag1_w = 1;
+        String json_log_cnt1_string = String(json_log_cnt1);
+        json_log1[json_log_cnt1_string]["t"] = millis() - json_log_millis1;
+        json_log1[json_log_cnt1_string]["n"] = "W";
+        json_log1[json_log_cnt1_string]["s"] = 1;
+        json_log_cnt1++;
+      }
+      if (!WaterSensorData && json_log_flag1_w == 1) {
+        json_log_flag1_w = 0;
+        String json_log_cnt1_string = String(json_log_cnt1);
+        json_log1[json_log_cnt1_string]["t"] = millis() - json_log_millis1;
+        json_log1[json_log_cnt1_string]["n"] = "W";
+        json_log1[json_log_cnt1_string]["s"] = 0;
+        json_log_cnt1++;
+      }
+    }
+  }
+
+  if (ChannelNum == 2) {
+    if (json_log_flag2) {
+      if (Amps_TRMS > CH2_Curr_W && json_log_flag2_c == 0) {
+        json_log_flag2_c = 1;
+        String json_log_cnt2_string = String(json_log_cnt2);
+        json_log2[json_log_cnt2_string]["t"] = millis() - json_log_millis2;
+        json_log2[json_log_cnt2_string]["n"] = "C";
+        json_log2[json_log_cnt2_string]["s"] = 1;
+        json_log_cnt2++;
+      }
+      if (Amps_TRMS < CH2_Curr_W && json_log_flag2_c == 1) {
+        json_log_flag2_c = 0;
+        String json_log_cnt2_string = String(json_log_cnt2);
+        json_log2[json_log_cnt2_string]["t"] = millis() - json_log_millis2;
+        json_log2[json_log_cnt2_string]["n"] = "C";
+        json_log2[json_log_cnt2_string]["s"] = 0;
+        json_log_cnt2++;
+      }
+
+      if (l_hour > CH2_Flow_W && json_log_flag2_f == 0) {
+        json_log_flag2_f = 1;
+        String json_log_cnt2_string = String(json_log_cnt2);
+        json_log2[json_log_cnt2_string]["t"] = millis() - json_log_millis2;
+        json_log2[json_log_cnt2_string]["n"] = "F";
+        json_log2[json_log_cnt2_string]["s"] = 1;
+        json_log_cnt2++;
+      }
+      if (l_hour < CH2_Flow_W && json_log_flag2_f == 1) {
+        json_log_flag2_f = 0;
+        String json_log_cnt2_string = String(json_log_cnt2);
+        json_log2[json_log_cnt2_string]["t"] = millis() - json_log_millis2;
+        json_log2[json_log_cnt2_string]["n"] = "F";
+        json_log2[json_log_cnt2_string]["s"] = 0;
+        json_log_cnt2++;
+      }
+
+      if (WaterSensorData && json_log_flag2_w == 0) {
+        json_log_flag2_w = 1;
+        String json_log_cnt2_string = String(json_log_cnt2);
+        json_log2[json_log_cnt2_string]["t"] = millis() - json_log_millis2;
+        json_log2[json_log_cnt2_string]["n"] = "W";
+        json_log2[json_log_cnt2_string]["s"] = 1;
+        json_log_cnt2++;
+      }
+      if (!WaterSensorData && json_log_flag2_w == 1) {
+        json_log_flag2_w = 0;
+        String json_log_cnt2_string = String(json_log_cnt2);
+        json_log2[json_log_cnt2_string]["t"] = millis() - json_log_millis2;
+        json_log2[json_log_cnt2_string]["n"] = "W";
+        json_log2[json_log_cnt2_string]["s"] = 0;
+        json_log_cnt2++;
+      }
+    }
+  }
 
   if (ChannelNum == 1 && millis() - se_prev_millis1 >= 500 && se_cnt1 == 1)
   {
     if (cnt == 1) // CH1 세탁기 동작 시작
     {
+      json_log_flag1 = 1;
+      json_log_cnt1 = 1;
+      json_log_millis1 = millis();
       se_cnt1 = 0;
       CH1_Cnt = 0;
       digitalWrite(PIN_CH1_LED, HIGH);
@@ -932,6 +1115,9 @@ void Status_Judgment(float Amps_TRMS, int WaterSensorData, unsigned int l_hour, 
   {
     if (cnt == 1) // CH2 세탁기 동작 시작
     {
+      json_log_flag2 = 1;
+      json_log_cnt2 = 1;
+      json_log_millis2 = millis();
       se_cnt2 = 0;
       CH2_Cnt = 0;
       digitalWrite(PIN_CH2_LED, HIGH);
@@ -962,6 +1148,14 @@ void Status_Judgment(float Amps_TRMS, int WaterSensorData, unsigned int l_hour, 
       ;
     else if (ChannelNum == 1 && millis() - previousMillis_end >= CH1_EndDelay_W) // CH1 세탁기 동작 종료
     {
+      json_log_flag1_c = 0;
+      json_log_flag1_f = 0;
+      json_log_flag1_w = 0;
+      json_log_flag1 = 0;
+      String json_log_data1 = "";
+      serializeJson(json_log1, json_log_data1);
+      Serial.println(json_log_data1);
+      json_log_data1.clear();
       Serial.println("CH1 Washer Ended");
       SendStatus(1, 1);
       CH1_Cnt = 1;
@@ -970,6 +1164,14 @@ void Status_Judgment(float Amps_TRMS, int WaterSensorData, unsigned int l_hour, 
     }
     else if (ChannelNum == 2 && millis() - previousMillis_end >= CH2_EndDelay_W) // CH2 세탁기 동작 종료
     {
+      json_log_flag2_c = 0;
+      json_log_flag2_f = 0;
+      json_log_flag2_w = 0;
+      json_log_flag2 = 0;
+      String json_log_data2 = "";
+      serializeJson(json_log2, json_log_data2);
+      Serial.println(json_log_data2);
+      json_log_data2.clear();
       Serial.println("CH2 Washer Ended");
       SendStatus(2, 1);
       CH2_Cnt = 1;
