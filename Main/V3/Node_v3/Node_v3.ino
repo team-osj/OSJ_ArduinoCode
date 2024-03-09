@@ -287,8 +287,7 @@ int SendStatus(int ch, bool status, String log)
     if (ch == 2)
       CurrStatus["id"] = CH2_DeviceNo;
     CurrStatus["state"] = status;
-    if (log != "")
-      CurrStatus["log"] = log;
+    CurrStatus["log"] = log;
     String CurrStatus_String;
     serializeJson(CurrStatus, CurrStatus_String);
     webSocket.sendTXT(CurrStatus_String);
