@@ -924,7 +924,7 @@ void Dryer_Status_Judgment(float Amps_TRMS, int cnt, int m, unsigned long previo
         return;
       }
       char s[100];
-      strftime(s, sizeof(s), "%F", &timeinfo);
+      strftime(s, sizeof(s), "%F %T", &timeinfo);
       String local_time(s);
       json_log1["START"]["local_time"] = local_time;
 
@@ -969,7 +969,7 @@ void Dryer_Status_Judgment(float Amps_TRMS, int cnt, int m, unsigned long previo
         return;
       }
       char s[100];
-      strftime(s, sizeof(s), "%F", &timeinfo);
+      strftime(s, sizeof(s), "%F %T", &timeinfo);
       String local_time(s);
       json_log2["START"]["local_time"] = local_time;
 
@@ -1013,7 +1013,7 @@ void Dryer_Status_Judgment(float Amps_TRMS, int cnt, int m, unsigned long previo
         return;
       }
       char s[100];
-      strftime(s, sizeof(s), "%F", &timeinfo);
+      strftime(s, sizeof(s), "%F %T", &timeinfo);
       String local_time(s);
       json_log1["END"]["local_time"] = local_time;
       
@@ -1040,7 +1040,7 @@ void Dryer_Status_Judgment(float Amps_TRMS, int cnt, int m, unsigned long previo
         return;
       }
       char s[100];
-      strftime(s, sizeof(s), "%F", &timeinfo);
+      strftime(s, sizeof(s), "%F %T", &timeinfo);
       String local_time(s);
       json_log2["END"]["local_time"] = local_time;
       
@@ -1278,7 +1278,7 @@ void Status_Judgment(float Amps_TRMS, int WaterSensorData, unsigned int l_hour, 
         return;
       }
       char s[100];
-      strftime(s, sizeof(s), "%F", &timeinfo);
+      strftime(s, sizeof(s), "%F %T", &timeinfo);
       String local_time(s);
       json_log1["START"]["local_time"] = local_time;
 
@@ -1307,7 +1307,7 @@ void Status_Judgment(float Amps_TRMS, int WaterSensorData, unsigned int l_hour, 
         return;
       }
       char s[100];
-      strftime(s, sizeof(s), "%F", &timeinfo);
+      strftime(s, sizeof(s), "%F %T", &timeinfo);
       String local_time(s);
       json_log2["START"]["local_time"] = local_time;
 
@@ -1353,7 +1353,7 @@ void Status_Judgment(float Amps_TRMS, int WaterSensorData, unsigned int l_hour, 
         return;
       }
       char s[100];
-      strftime(s, sizeof(s), "%F", &timeinfo);
+      strftime(s, sizeof(s), "%F %T", &timeinfo);
       String local_time(s);
       json_log1["END"]["local_time"] = local_time;
       
@@ -1382,7 +1382,7 @@ void Status_Judgment(float Amps_TRMS, int WaterSensorData, unsigned int l_hour, 
         return;
       }
       char s[100];
-      strftime(s, sizeof(s), "%F", &timeinfo);
+      strftime(s, sizeof(s), "%F %T", &timeinfo);
       String local_time(s);
       json_log2["END"]["local_time"] = local_time;
       
