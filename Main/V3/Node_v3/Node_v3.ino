@@ -175,11 +175,11 @@ void webSocketEvent(WStype_t type, uint8_t *payload, size_t length)
         {
           if (CH1_Live == true)
           {
-            SendStatus(1, CH1_CurrStatus);
+            SendStatus(1, CH1_CurrStatus, "");
           }
           if (CH2_Live == true)
           {
-            SendStatus(2, CH2_CurrStatus);
+            SendStatus(2, CH2_CurrStatus, "");
           }
         }
       }
@@ -272,7 +272,7 @@ void webSocketEvent(WStype_t type, uint8_t *payload, size_t length)
   }
 }
 
-int SendStatus(int ch, bool status)
+int SendStatus(int ch, bool status, String log)
 {
   if (ch == 1 && CH1_Live == false)
     return 1;
@@ -280,13 +280,15 @@ int SendStatus(int ch, bool status)
     return 1;
   if (WiFi.status() == WL_CONNECTED && webSocket.isConnected() == true)
   {
-    StaticJsonDocument<100> CurrStatus;
+    DynamicJsonDocument CurrStatus(1024);
     CurrStatus["title"] = "Update";
     if (ch == 1)
       CurrStatus["id"] = CH1_DeviceNo;
     if (ch == 2)
       CurrStatus["id"] = CH2_DeviceNo;
     CurrStatus["state"] = status;
+    if (log != "")
+      CurrStatus["log"] = log;
     String CurrStatus_String;
     serializeJson(CurrStatus, CurrStatus_String);
     webSocket.sendTXT(CurrStatus_String);
@@ -879,7 +881,7 @@ void Dryer_Status_Judgment(float Amps_TRMS, int cnt, int m, unsigned long previo
       Serial.print("CH");
       Serial.print(ChannelNum);
       Serial.println(" Dryer Started");
-      SendStatus(ChannelNum, 0);
+      SendStatus(ChannelNum, 0, "");
     }
     m1 = 1;
   }
@@ -907,7 +909,7 @@ void Dryer_Status_Judgment(float Amps_TRMS, int cnt, int m, unsigned long previo
       Serial.print("CH");
       Serial.print(ChannelNum);
       Serial.println(" Dryer Started");
-      SendStatus(ChannelNum, 0);
+      SendStatus(ChannelNum, 0, "");
     }
     m2 = 1;
   }
@@ -934,10 +936,10 @@ void Dryer_Status_Judgment(float Amps_TRMS, int cnt, int m, unsigned long previo
       json_log_flag1 = 0;
       String json_log_data1 = "";
       serializeJson(json_log1, json_log_data1);
-      Serial.println(json_log_data1);
-      json_log_data1.clear();
+      //Serial.println(json_log_data1);
+      json_log1.clear();
       Serial.println("CH1 Dryer Ended");
-      SendStatus(1, 1);
+      SendStatus(1, 1, json_log_data1);
       CH1_Cnt = 1;
       digitalWrite(PIN_CH1_LED, LOW);
       CH1_CurrStatus = 1;
@@ -948,10 +950,10 @@ void Dryer_Status_Judgment(float Amps_TRMS, int cnt, int m, unsigned long previo
       json_log_flag2 = 0;
       String json_log_data2 = "";
       serializeJson(json_log2, json_log_data2);
-      Serial.println(json_log_data2);
-      json_log_data2.clear();
+      //Serial.println(json_log_data2);
+      json_log2.clear();
       Serial.println("CH2 Dryer Ended");
-      SendStatus(2, 1);
+      SendStatus(2, 1, json_log_data2);
       CH2_Cnt = 1;
       digitalWrite(PIN_CH2_LED, LOW);
       CH2_CurrStatus = 1;
@@ -1107,7 +1109,7 @@ void Status_Judgment(float Amps_TRMS, int WaterSensorData, unsigned int l_hour, 
       Serial.print("CH");
       Serial.print(ChannelNum);
       Serial.println(" Washer Started");
-      SendStatus(ChannelNum, 0);
+      SendStatus(ChannelNum, 0, "");
     }
     m1 = 1;
   }
@@ -1125,7 +1127,7 @@ void Status_Judgment(float Amps_TRMS, int WaterSensorData, unsigned int l_hour, 
       Serial.print("CH");
       Serial.print(ChannelNum);
       Serial.println(" Washer Started");
-      SendStatus(ChannelNum, 0);
+      SendStatus(ChannelNum, 0, "");
     }
     m2 = 1;
   }
@@ -1154,10 +1156,10 @@ void Status_Judgment(float Amps_TRMS, int WaterSensorData, unsigned int l_hour, 
       json_log_flag1 = 0;
       String json_log_data1 = "";
       serializeJson(json_log1, json_log_data1);
-      Serial.println(json_log_data1);
-      json_log_data1.clear();
+      //Serial.println(json_log_data1);
+      json_log1.clear();
       Serial.println("CH1 Washer Ended");
-      SendStatus(1, 1);
+      SendStatus(1, 1, json_log_data1);
       CH1_Cnt = 1;
       digitalWrite(PIN_CH1_LED, LOW);
       CH1_CurrStatus = 1;
@@ -1170,10 +1172,10 @@ void Status_Judgment(float Amps_TRMS, int WaterSensorData, unsigned int l_hour, 
       json_log_flag2 = 0;
       String json_log_data2 = "";
       serializeJson(json_log2, json_log_data2);
-      Serial.println(json_log_data2);
-      json_log_data2.clear();
+      //Serial.println(json_log_data2);
+      json_log2.clear();
       Serial.println("CH2 Washer Ended");
-      SendStatus(2, 1);
+      SendStatus(2, 1, json_log_data2);
       CH2_Cnt = 1;
       digitalWrite(PIN_CH2_LED, LOW);
       CH2_CurrStatus = 1;
