@@ -843,6 +843,11 @@ void Dryer_Status_Judgment(float Amps_TRMS, int cnt, int m, unsigned long previo
       json_log1[json_log_cnt1_string]["t"] = millis() - json_log_millis1;
       json_log1[json_log_cnt1_string]["n"] = "C";
       json_log1[json_log_cnt1_string]["s"] = 0;
+      if (json_log_cnt1 % 100 == 0) {
+          String json_log_data1 = "";
+          serializeJson(json_log1, json_log_data1);
+          json_log1.clear();
+        }
       json_log_cnt1++;
     }
   }
@@ -853,6 +858,11 @@ void Dryer_Status_Judgment(float Amps_TRMS, int cnt, int m, unsigned long previo
       json_log2[json_log_cnt2_string]["t"] = millis() - json_log_millis2;
       json_log2[json_log_cnt2_string]["n"] = "C";
       json_log2[json_log_cnt2_string]["s"] = 0;
+      if (json_log_cnt2 % 100 == 0) {
+          String json_log_data2 = "";
+          serializeJson(json_log2, json_log_data2);
+          json_log2.clear();
+        }
       json_log_cnt2++;
     }
   }
@@ -865,6 +875,11 @@ void Dryer_Status_Judgment(float Amps_TRMS, int cnt, int m, unsigned long previo
         json_log1[json_log_cnt1_string]["t"] = millis() - json_log_millis1;
         json_log1[json_log_cnt1_string]["n"] = "C";
         json_log1[json_log_cnt1_string]["s"] = 1;
+        if (json_log_cnt1 % 100 == 0) {
+          String json_log_data1 = "";
+          serializeJson(json_log1, json_log_data1);
+          json_log1.clear();
+        }
         json_log_cnt1++;
       }
     }
@@ -873,6 +888,17 @@ void Dryer_Status_Judgment(float Amps_TRMS, int cnt, int m, unsigned long previo
       json_log_flag1 = 1;
       json_log_cnt1 = 1;
       json_log_millis1 = millis();
+      String json_log_cnt1_string = String(json_log_cnt1);
+      json_log1[json_log_cnt1_string]["start"] = 1;
+      struct tm timeinfo;
+      if (!getLocalTime(&timeinfo))
+      {
+        Serial.println("Failed to obtain time");
+        return;
+      }
+      json_log1[json_log_cnt1_string]["local_time"] = asctime(&timeinfo);
+      json_log_cnt1++;
+
       //dryer_cnt1 = 0;
       CH1_Cnt = 0;
       digitalWrite(PIN_CH1_LED, HIGH);
@@ -893,6 +919,11 @@ void Dryer_Status_Judgment(float Amps_TRMS, int cnt, int m, unsigned long previo
         json_log2[json_log_cnt2_string]["t"] = millis() - json_log_millis2;
         json_log2[json_log_cnt2_string]["n"] = "C";
         json_log2[json_log_cnt2_string]["s"] = 1;
+        if (json_log_cnt2 % 100 == 0) {
+          String json_log_data2 = "";
+          serializeJson(json_log2, json_log_data2);
+          json_log2.clear();
+        }
         json_log_cnt2++;
       }
     }
@@ -901,6 +932,17 @@ void Dryer_Status_Judgment(float Amps_TRMS, int cnt, int m, unsigned long previo
       json_log_flag2 = 1;
       json_log_cnt2 = 1;
       json_log_millis2 = millis();
+      String json_log_cnt2_string = String(json_log_cnt2);
+      json_log2[json_log_cnt2_string]["start"] = 1;
+      struct tm timeinfo;
+      if (!getLocalTime(&timeinfo))
+      {
+        Serial.println("Failed to obtain time");
+        return;
+      }
+      json_log2[json_log_cnt2_string]["local_time"] = asctime(&timeinfo);
+      json_log_cnt2++;
+
       //dryer_cnt2 = 0;
       CH2_Cnt = 0;
       digitalWrite(PIN_CH2_LED, HIGH);
@@ -933,6 +975,18 @@ void Dryer_Status_Judgment(float Amps_TRMS, int cnt, int m, unsigned long previo
     {
       json_log_flag1_c = 0;
       json_log_flag1 = 0;
+
+      String json_log_cnt1_string = String(json_log_cnt1);
+      json_log1[json_log_cnt1_string]["end"] = 1;
+      struct tm timeinfo;
+      if (!getLocalTime(&timeinfo))
+      {
+        Serial.println("Failed to obtain time");
+        return;
+      }
+      json_log1[json_log_cnt1_string]["local_time"] = asctime(&timeinfo);
+      json_log_cnt1++;
+      
       String json_log_data1 = "";
       serializeJson(json_log1, json_log_data1);
       //Serial.println(json_log_data1);
@@ -947,6 +1001,18 @@ void Dryer_Status_Judgment(float Amps_TRMS, int cnt, int m, unsigned long previo
     {
       json_log_flag2_c = 0;
       json_log_flag2 = 0;
+
+      String json_log_cnt2_string = String(json_log_cnt2);
+      json_log2[json_log_cnt2_string]["start"] = 1;
+      struct tm timeinfo;
+      if (!getLocalTime(&timeinfo))
+      {
+        Serial.println("Failed to obtain time");
+        return;
+      }
+      json_log2[json_log_cnt2_string]["local_time"] = asctime(&timeinfo);
+      json_log_cnt2++;
+      
       String json_log_data2 = "";
       serializeJson(json_log2, json_log_data2);
       //Serial.println(json_log_data2);
@@ -992,6 +1058,11 @@ void Status_Judgment(float Amps_TRMS, int WaterSensorData, unsigned int l_hour, 
         json_log1[json_log_cnt1_string]["t"] = millis() - json_log_millis1;
         json_log1[json_log_cnt1_string]["n"] = "C";
         json_log1[json_log_cnt1_string]["s"] = 1;
+        if (json_log_cnt1 % 100 == 0) {
+          String json_log_data1 = "";
+          serializeJson(json_log1, json_log_data1);
+          json_log1.clear();
+        }
         json_log_cnt1++;
       }
       if (Amps_TRMS < CH1_Curr_W && json_log_flag1_c == 1) {
@@ -1000,6 +1071,11 @@ void Status_Judgment(float Amps_TRMS, int WaterSensorData, unsigned int l_hour, 
         json_log1[json_log_cnt1_string]["t"] = millis() - json_log_millis1;
         json_log1[json_log_cnt1_string]["n"] = "C";
         json_log1[json_log_cnt1_string]["s"] = 0;
+        if (json_log_cnt1 % 100 == 0) {
+          String json_log_data1 = "";
+          serializeJson(json_log1, json_log_data1);
+          json_log1.clear();
+        }
         json_log_cnt1++;
       }
 
@@ -1009,6 +1085,11 @@ void Status_Judgment(float Amps_TRMS, int WaterSensorData, unsigned int l_hour, 
         json_log1[json_log_cnt1_string]["t"] = millis() - json_log_millis1;
         json_log1[json_log_cnt1_string]["n"] = "F";
         json_log1[json_log_cnt1_string]["s"] = 1;
+        if (json_log_cnt1 % 100 == 0) {
+          String json_log_data1 = "";
+          serializeJson(json_log1, json_log_data1);
+          json_log1.clear();
+        }
         json_log_cnt1++;
       }
       if (l_hour < CH1_Flow_W && json_log_flag1_f == 1) {
@@ -1017,6 +1098,11 @@ void Status_Judgment(float Amps_TRMS, int WaterSensorData, unsigned int l_hour, 
         json_log1[json_log_cnt1_string]["t"] = millis() - json_log_millis1;
         json_log1[json_log_cnt1_string]["n"] = "F";
         json_log1[json_log_cnt1_string]["s"] = 0;
+        if (json_log_cnt1 % 100 == 0) {
+          String json_log_data1 = "";
+          serializeJson(json_log1, json_log_data1);
+          json_log1.clear();
+        }
         json_log_cnt1++;
       }
 
@@ -1026,6 +1112,11 @@ void Status_Judgment(float Amps_TRMS, int WaterSensorData, unsigned int l_hour, 
         json_log1[json_log_cnt1_string]["t"] = millis() - json_log_millis1;
         json_log1[json_log_cnt1_string]["n"] = "W";
         json_log1[json_log_cnt1_string]["s"] = 1;
+        if (json_log_cnt1 % 100 == 0) {
+          String json_log_data1 = "";
+          serializeJson(json_log1, json_log_data1);
+          json_log1.clear();
+        }
         json_log_cnt1++;
       }
       if (!WaterSensorData && json_log_flag1_w == 1) {
@@ -1034,6 +1125,11 @@ void Status_Judgment(float Amps_TRMS, int WaterSensorData, unsigned int l_hour, 
         json_log1[json_log_cnt1_string]["t"] = millis() - json_log_millis1;
         json_log1[json_log_cnt1_string]["n"] = "W";
         json_log1[json_log_cnt1_string]["s"] = 0;
+        if (json_log_cnt1 % 100 == 0) {
+          String json_log_data1 = "";
+          serializeJson(json_log1, json_log_data1);
+          json_log1.clear();
+        }
         json_log_cnt1++;
       }
     }
@@ -1047,6 +1143,11 @@ void Status_Judgment(float Amps_TRMS, int WaterSensorData, unsigned int l_hour, 
         json_log2[json_log_cnt2_string]["t"] = millis() - json_log_millis2;
         json_log2[json_log_cnt2_string]["n"] = "C";
         json_log2[json_log_cnt2_string]["s"] = 1;
+        if (json_log_cnt2 % 100 == 0) {
+          String json_log_data2 = "";
+          serializeJson(json_log2, json_log_data2);
+          json_log2.clear();
+        }
         json_log_cnt2++;
       }
       if (Amps_TRMS < CH2_Curr_W && json_log_flag2_c == 1) {
@@ -1055,6 +1156,11 @@ void Status_Judgment(float Amps_TRMS, int WaterSensorData, unsigned int l_hour, 
         json_log2[json_log_cnt2_string]["t"] = millis() - json_log_millis2;
         json_log2[json_log_cnt2_string]["n"] = "C";
         json_log2[json_log_cnt2_string]["s"] = 0;
+        if (json_log_cnt2 % 100 == 0) {
+          String json_log_data2 = "";
+          serializeJson(json_log2, json_log_data2);
+          json_log2.clear();
+        }
         json_log_cnt2++;
       }
 
@@ -1064,6 +1170,11 @@ void Status_Judgment(float Amps_TRMS, int WaterSensorData, unsigned int l_hour, 
         json_log2[json_log_cnt2_string]["t"] = millis() - json_log_millis2;
         json_log2[json_log_cnt2_string]["n"] = "F";
         json_log2[json_log_cnt2_string]["s"] = 1;
+        if (json_log_cnt2 % 100 == 0) {
+          String json_log_data2 = "";
+          serializeJson(json_log2, json_log_data2);
+          json_log2.clear();
+        }
         json_log_cnt2++;
       }
       if (l_hour < CH2_Flow_W && json_log_flag2_f == 1) {
@@ -1072,6 +1183,11 @@ void Status_Judgment(float Amps_TRMS, int WaterSensorData, unsigned int l_hour, 
         json_log2[json_log_cnt2_string]["t"] = millis() - json_log_millis2;
         json_log2[json_log_cnt2_string]["n"] = "F";
         json_log2[json_log_cnt2_string]["s"] = 0;
+        if (json_log_cnt2 % 100 == 0) {
+          String json_log_data2 = "";
+          serializeJson(json_log2, json_log_data2);
+          json_log2.clear();
+        }
         json_log_cnt2++;
       }
 
@@ -1081,6 +1197,11 @@ void Status_Judgment(float Amps_TRMS, int WaterSensorData, unsigned int l_hour, 
         json_log2[json_log_cnt2_string]["t"] = millis() - json_log_millis2;
         json_log2[json_log_cnt2_string]["n"] = "W";
         json_log2[json_log_cnt2_string]["s"] = 1;
+        if (json_log_cnt2 % 100 == 0) {
+          String json_log_data2 = "";
+          serializeJson(json_log2, json_log_data2);
+          json_log2.clear();
+        }
         json_log_cnt2++;
       }
       if (!WaterSensorData && json_log_flag2_w == 1) {
@@ -1089,6 +1210,11 @@ void Status_Judgment(float Amps_TRMS, int WaterSensorData, unsigned int l_hour, 
         json_log2[json_log_cnt2_string]["t"] = millis() - json_log_millis2;
         json_log2[json_log_cnt2_string]["n"] = "W";
         json_log2[json_log_cnt2_string]["s"] = 0;
+        if (json_log_cnt2 % 100 == 0) {
+          String json_log_data2 = "";
+          serializeJson(json_log2, json_log_data2);
+          json_log2.clear();
+        }
         json_log_cnt2++;
       }
     }
@@ -1101,6 +1227,17 @@ void Status_Judgment(float Amps_TRMS, int WaterSensorData, unsigned int l_hour, 
       json_log_flag1 = 1;
       json_log_cnt1 = 1;
       json_log_millis1 = millis();
+      String json_log_cnt1_string = String(json_log_cnt1);
+      json_log1[json_log_cnt1_string]["start"] = 1;
+      struct tm timeinfo;
+      if (!getLocalTime(&timeinfo))
+      {
+        Serial.println("Failed to obtain time");
+        return;
+      }
+      json_log1[json_log_cnt1_string]["local_time"] = asctime(&timeinfo);
+      json_log_cnt1++;
+
       se_cnt1 = 0;
       CH1_Cnt = 0;
       digitalWrite(PIN_CH1_LED, HIGH);
@@ -1119,6 +1256,17 @@ void Status_Judgment(float Amps_TRMS, int WaterSensorData, unsigned int l_hour, 
       json_log_flag2 = 1;
       json_log_cnt2 = 1;
       json_log_millis2 = millis();
+      String json_log_cnt2_string = String(json_log_cnt2);
+      json_log2[json_log_cnt2_string]["start"] = 1;
+      struct tm timeinfo;
+      if (!getLocalTime(&timeinfo))
+      {
+        Serial.println("Failed to obtain time");
+        return;
+      }
+      json_log2[json_log_cnt2_string]["local_time"] = asctime(&timeinfo);
+      json_log_cnt2++;
+
       se_cnt2 = 0;
       CH2_Cnt = 0;
       digitalWrite(PIN_CH2_LED, HIGH);
@@ -1153,6 +1301,18 @@ void Status_Judgment(float Amps_TRMS, int WaterSensorData, unsigned int l_hour, 
       json_log_flag1_f = 0;
       json_log_flag1_w = 0;
       json_log_flag1 = 0;
+
+      String json_log_cnt1_string = String(json_log_cnt1);
+      json_log1[json_log_cnt1_string]["end"] = 1;
+      struct tm timeinfo;
+      if (!getLocalTime(&timeinfo))
+      {
+        Serial.println("Failed to obtain time");
+        return;
+      }
+      json_log1[json_log_cnt1_string]["local_time"] = asctime(&timeinfo);
+      json_log_cnt1++;
+      
       String json_log_data1 = "";
       serializeJson(json_log1, json_log_data1);
       //Serial.println(json_log_data1);
@@ -1169,6 +1329,18 @@ void Status_Judgment(float Amps_TRMS, int WaterSensorData, unsigned int l_hour, 
       json_log_flag2_f = 0;
       json_log_flag2_w = 0;
       json_log_flag2 = 0;
+
+      String json_log_cnt2_string = String(json_log_cnt2);
+      json_log2[json_log_cnt2_string]["start"] = 1;
+      struct tm timeinfo;
+      if (!getLocalTime(&timeinfo))
+      {
+        Serial.println("Failed to obtain time");
+        return;
+      }
+      json_log2[json_log_cnt2_string]["local_time"] = asctime(&timeinfo);
+      json_log_cnt2++;
+      
       String json_log_data2 = "";
       serializeJson(json_log2, json_log_data2);
       //Serial.println(json_log_data2);
