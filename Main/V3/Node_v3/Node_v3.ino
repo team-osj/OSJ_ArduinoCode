@@ -272,7 +272,7 @@ void webSocketEvent(WStype_t type, uint8_t *payload, size_t length)
   }
 }
 
-int SendStatus(int ch, bool status, String log)
+int SendStatus(int ch, bool status)
 {
   if (ch == 1 && CH1_Live == false)
     return 1;
@@ -280,14 +280,13 @@ int SendStatus(int ch, bool status, String log)
     return 1;
   if (WiFi.status() == WL_CONNECTED && webSocket.isConnected() == true)
   {
-    DynamicJsonDocument CurrStatus(1024);
+    StaticJsonDocument<100> CurrStatus;
     CurrStatus["title"] = "Update";
     if (ch == 1)
       CurrStatus["id"] = CH1_DeviceNo;
     if (ch == 2)
       CurrStatus["id"] = CH2_DeviceNo;
     CurrStatus["state"] = status;
-    CurrStatus["log"] = log;
     String CurrStatus_String;
     serializeJson(CurrStatus, CurrStatus_String);
     webSocket.sendTXT(CurrStatus_String);
@@ -296,6 +295,33 @@ int SendStatus(int ch, bool status, String log)
   else
   {
     Serial.println("SendStatus Fail - No Server Connection");
+    return 1;
+  }
+}
+
+int SendLog(int ch, String log)
+{
+  if (ch == 1 && CH1_Live == false)
+    return 1;
+  if (ch == 2 && CH2_Live == false)
+    return 1;
+  if (WiFi.status() == WL_CONNECTED && webSocket.isConnected() == true)
+  {
+    DynamicJsonDocument LogData(1024);
+    LogData["title"] = "Log";
+    if (ch == 1)
+      LogData["id"] = CH1_DeviceNo;
+    if (ch == 2)
+      LogData["id"] = CH2_DeviceNo;
+    LogData["log"] = log;
+    String LogData_String;
+    serializeJson(LogData, LogData_String);
+    webSocket.sendTXT(LogData_String);
+    return 0;
+  }
+  else
+  {
+    Serial.println("SendLog Fail - No Server Connection");
     return 1;
   }
 }
