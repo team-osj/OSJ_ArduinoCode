@@ -175,11 +175,11 @@ void webSocketEvent(WStype_t type, uint8_t *payload, size_t length)
         {
           if (CH1_Live == true)
           {
-            SendStatus(1, CH1_CurrStatus, "");
+            SendStatus(1, CH1_CurrStatus);
           }
           if (CH2_Live == true)
           {
-            SendStatus(2, CH2_CurrStatus, "");
+            SendStatus(2, CH2_CurrStatus);
           }
         }
       }
@@ -873,6 +873,7 @@ void Dryer_Status_Judgment(float Amps_TRMS, int cnt, int m, unsigned long previo
           String json_log_data1 = "";
           serializeJson(json_log1, json_log_data1);
           json_log1.clear();
+          SendLog(1, json_log_data1);
         }
       json_log_cnt1++;
     }
@@ -888,6 +889,7 @@ void Dryer_Status_Judgment(float Amps_TRMS, int cnt, int m, unsigned long previo
           String json_log_data2 = "";
           serializeJson(json_log2, json_log_data2);
           json_log2.clear();
+          SendLog(2, json_log_data2);
         }
       json_log_cnt2++;
     }
@@ -905,6 +907,7 @@ void Dryer_Status_Judgment(float Amps_TRMS, int cnt, int m, unsigned long previo
           String json_log_data1 = "";
           serializeJson(json_log1, json_log_data1);
           json_log1.clear();
+          SendLog(1, json_log_data1);
         }
         json_log_cnt1++;
       }
@@ -932,7 +935,7 @@ void Dryer_Status_Judgment(float Amps_TRMS, int cnt, int m, unsigned long previo
       Serial.print("CH");
       Serial.print(ChannelNum);
       Serial.println(" Dryer Started");
-      SendStatus(ChannelNum, 0, "");
+      SendStatus(ChannelNum, 0);
     }
     m1 = 1;
   }
@@ -949,6 +952,7 @@ void Dryer_Status_Judgment(float Amps_TRMS, int cnt, int m, unsigned long previo
           String json_log_data2 = "";
           serializeJson(json_log2, json_log_data2);
           json_log2.clear();
+          SendLog(2, json_log_data2);
         }
         json_log_cnt2++;
       }
@@ -976,7 +980,7 @@ void Dryer_Status_Judgment(float Amps_TRMS, int cnt, int m, unsigned long previo
       Serial.print("CH");
       Serial.print(ChannelNum);
       Serial.println(" Dryer Started");
-      SendStatus(ChannelNum, 0, "");
+      SendStatus(ChannelNum, 0);
     }
     m2 = 1;
   }
@@ -1018,7 +1022,8 @@ void Dryer_Status_Judgment(float Amps_TRMS, int cnt, int m, unsigned long previo
       //Serial.println(json_log_data1);
       json_log1.clear();
       Serial.println("CH1 Dryer Ended");
-      SendStatus(1, 1, json_log_data1);
+      SendStatus(1, 1);
+      SendLog(1, json_log_data1);
       CH1_Cnt = 1;
       digitalWrite(PIN_CH1_LED, LOW);
       CH1_CurrStatus = 1;
@@ -1044,7 +1049,8 @@ void Dryer_Status_Judgment(float Amps_TRMS, int cnt, int m, unsigned long previo
       //Serial.println(json_log_data2);
       json_log2.clear();
       Serial.println("CH2 Dryer Ended");
-      SendStatus(2, 1, json_log_data2);
+      SendStatus(2, 1);
+      SendLog(2, json_log_data2);
       CH2_Cnt = 1;
       digitalWrite(PIN_CH2_LED, LOW);
       CH2_CurrStatus = 1;
@@ -1088,6 +1094,7 @@ void Status_Judgment(float Amps_TRMS, int WaterSensorData, unsigned int l_hour, 
           String json_log_data1 = "";
           serializeJson(json_log1, json_log_data1);
           json_log1.clear();
+          SendLog(1, json_log_data1);
         }
         json_log_cnt1++;
       }
@@ -1101,6 +1108,7 @@ void Status_Judgment(float Amps_TRMS, int WaterSensorData, unsigned int l_hour, 
           String json_log_data1 = "";
           serializeJson(json_log1, json_log_data1);
           json_log1.clear();
+          SendLog(1, json_log_data1);
         }
         json_log_cnt1++;
       }
@@ -1115,6 +1123,7 @@ void Status_Judgment(float Amps_TRMS, int WaterSensorData, unsigned int l_hour, 
           String json_log_data1 = "";
           serializeJson(json_log1, json_log_data1);
           json_log1.clear();
+          SendLog(1, json_log_data1);
         }
         json_log_cnt1++;
       }
@@ -1128,6 +1137,7 @@ void Status_Judgment(float Amps_TRMS, int WaterSensorData, unsigned int l_hour, 
           String json_log_data1 = "";
           serializeJson(json_log1, json_log_data1);
           json_log1.clear();
+          SendLog(1, json_log_data1);
         }
         json_log_cnt1++;
       }
@@ -1142,6 +1152,7 @@ void Status_Judgment(float Amps_TRMS, int WaterSensorData, unsigned int l_hour, 
           String json_log_data1 = "";
           serializeJson(json_log1, json_log_data1);
           json_log1.clear();
+          SendLog(1, json_log_data1);
         }
         json_log_cnt1++;
       }
@@ -1155,6 +1166,7 @@ void Status_Judgment(float Amps_TRMS, int WaterSensorData, unsigned int l_hour, 
           String json_log_data1 = "";
           serializeJson(json_log1, json_log_data1);
           json_log1.clear();
+          SendLog(1, json_log_data1);
         }
         json_log_cnt1++;
       }
@@ -1173,6 +1185,7 @@ void Status_Judgment(float Amps_TRMS, int WaterSensorData, unsigned int l_hour, 
           String json_log_data2 = "";
           serializeJson(json_log2, json_log_data2);
           json_log2.clear();
+          SendLog(2, json_log_data2);
         }
         json_log_cnt2++;
       }
@@ -1186,6 +1199,7 @@ void Status_Judgment(float Amps_TRMS, int WaterSensorData, unsigned int l_hour, 
           String json_log_data2 = "";
           serializeJson(json_log2, json_log_data2);
           json_log2.clear();
+          SendLog(2, json_log_data2);
         }
         json_log_cnt2++;
       }
@@ -1200,6 +1214,7 @@ void Status_Judgment(float Amps_TRMS, int WaterSensorData, unsigned int l_hour, 
           String json_log_data2 = "";
           serializeJson(json_log2, json_log_data2);
           json_log2.clear();
+          SendLog(2, json_log_data2);
         }
         json_log_cnt2++;
       }
@@ -1213,6 +1228,7 @@ void Status_Judgment(float Amps_TRMS, int WaterSensorData, unsigned int l_hour, 
           String json_log_data2 = "";
           serializeJson(json_log2, json_log_data2);
           json_log2.clear();
+          SendLog(2, json_log_data2);
         }
         json_log_cnt2++;
       }
@@ -1227,6 +1243,7 @@ void Status_Judgment(float Amps_TRMS, int WaterSensorData, unsigned int l_hour, 
           String json_log_data2 = "";
           serializeJson(json_log2, json_log_data2);
           json_log2.clear();
+          SendLog(2, json_log_data2);
         }
         json_log_cnt2++;
       }
@@ -1240,6 +1257,7 @@ void Status_Judgment(float Amps_TRMS, int WaterSensorData, unsigned int l_hour, 
           String json_log_data2 = "";
           serializeJson(json_log2, json_log_data2);
           json_log2.clear();
+          SendLog(2, json_log_data2);
         }
         json_log_cnt2++;
       }
@@ -1271,7 +1289,7 @@ void Status_Judgment(float Amps_TRMS, int WaterSensorData, unsigned int l_hour, 
       Serial.print("CH");
       Serial.print(ChannelNum);
       Serial.println(" Washer Started");
-      SendStatus(ChannelNum, 0, "");
+      SendStatus(ChannelNum, 0);
     }
     m1 = 1;
   }
@@ -1300,7 +1318,7 @@ void Status_Judgment(float Amps_TRMS, int WaterSensorData, unsigned int l_hour, 
       Serial.print("CH");
       Serial.print(ChannelNum);
       Serial.println(" Washer Started");
-      SendStatus(ChannelNum, 0, "");
+      SendStatus(ChannelNum, 0);
     }
     m2 = 1;
   }
@@ -1344,7 +1362,8 @@ void Status_Judgment(float Amps_TRMS, int WaterSensorData, unsigned int l_hour, 
       //Serial.println(json_log_data1);
       json_log1.clear();
       Serial.println("CH1 Washer Ended");
-      SendStatus(1, 1, json_log_data1);
+      SendStatus(1, 1);
+      SendLog(1, json_log_data1);
       CH1_Cnt = 1;
       digitalWrite(PIN_CH1_LED, LOW);
       CH1_CurrStatus = 1;
@@ -1372,7 +1391,8 @@ void Status_Judgment(float Amps_TRMS, int WaterSensorData, unsigned int l_hour, 
       //Serial.println(json_log_data2);
       json_log2.clear();
       Serial.println("CH2 Washer Ended");
-      SendStatus(2, 1, json_log_data2);
+      SendStatus(2, 1);
+      SendLog(2, json_log_data2);
       CH2_Cnt = 1;
       digitalWrite(PIN_CH2_LED, LOW);
       CH2_CurrStatus = 1;
