@@ -888,16 +888,16 @@ void Dryer_Status_Judgment(float Amps_TRMS, int cnt, int m, unsigned long previo
       json_log_flag1 = 1;
       json_log_cnt1 = 1;
       json_log_millis1 = millis();
-      String json_log_cnt1_string = String(json_log_cnt1);
-      json_log1[json_log_cnt1_string]["start"] = 1;
       struct tm timeinfo;
       if (!getLocalTime(&timeinfo))
       {
         Serial.println("Failed to obtain time");
         return;
       }
-      json_log1[json_log_cnt1_string]["local_time"] = asctime(&timeinfo);
-      json_log_cnt1++;
+      char s[100];
+      strftime(s, sizeof(s), "%F", &timeinfo);
+      String local_time(s);
+      json_log1["START"]["local_time"] = local_time;
 
       //dryer_cnt1 = 0;
       CH1_Cnt = 0;
@@ -932,16 +932,16 @@ void Dryer_Status_Judgment(float Amps_TRMS, int cnt, int m, unsigned long previo
       json_log_flag2 = 1;
       json_log_cnt2 = 1;
       json_log_millis2 = millis();
-      String json_log_cnt2_string = String(json_log_cnt2);
-      json_log2[json_log_cnt2_string]["start"] = 1;
       struct tm timeinfo;
       if (!getLocalTime(&timeinfo))
       {
         Serial.println("Failed to obtain time");
         return;
       }
-      json_log2[json_log_cnt2_string]["local_time"] = asctime(&timeinfo);
-      json_log_cnt2++;
+      char s[100];
+      strftime(s, sizeof(s), "%F", &timeinfo);
+      String local_time(s);
+      json_log2["START"]["local_time"] = local_time;
 
       //dryer_cnt2 = 0;
       CH2_Cnt = 0;
@@ -976,16 +976,16 @@ void Dryer_Status_Judgment(float Amps_TRMS, int cnt, int m, unsigned long previo
       json_log_flag1_c = 0;
       json_log_flag1 = 0;
 
-      String json_log_cnt1_string = String(json_log_cnt1);
-      json_log1[json_log_cnt1_string]["end"] = 1;
       struct tm timeinfo;
       if (!getLocalTime(&timeinfo))
       {
         Serial.println("Failed to obtain time");
         return;
       }
-      json_log1[json_log_cnt1_string]["local_time"] = asctime(&timeinfo);
-      json_log_cnt1++;
+      char s[100];
+      strftime(s, sizeof(s), "%F", &timeinfo);
+      String local_time(s);
+      json_log1["END"]["local_time"] = local_time;
       
       String json_log_data1 = "";
       serializeJson(json_log1, json_log_data1);
@@ -1002,16 +1002,16 @@ void Dryer_Status_Judgment(float Amps_TRMS, int cnt, int m, unsigned long previo
       json_log_flag2_c = 0;
       json_log_flag2 = 0;
 
-      String json_log_cnt2_string = String(json_log_cnt2);
-      json_log2[json_log_cnt2_string]["start"] = 1;
       struct tm timeinfo;
       if (!getLocalTime(&timeinfo))
       {
         Serial.println("Failed to obtain time");
         return;
       }
-      json_log2[json_log_cnt2_string]["local_time"] = asctime(&timeinfo);
-      json_log_cnt2++;
+      char s[100];
+      strftime(s, sizeof(s), "%F", &timeinfo);
+      String local_time(s);
+      json_log2["END"]["local_time"] = local_time;
       
       String json_log_data2 = "";
       serializeJson(json_log2, json_log_data2);
@@ -1227,16 +1227,16 @@ void Status_Judgment(float Amps_TRMS, int WaterSensorData, unsigned int l_hour, 
       json_log_flag1 = 1;
       json_log_cnt1 = 1;
       json_log_millis1 = millis();
-      String json_log_cnt1_string = String(json_log_cnt1);
-      json_log1[json_log_cnt1_string]["start"] = 1;
       struct tm timeinfo;
       if (!getLocalTime(&timeinfo))
       {
         Serial.println("Failed to obtain time");
         return;
       }
-      json_log1[json_log_cnt1_string]["local_time"] = asctime(&timeinfo);
-      json_log_cnt1++;
+      char s[100];
+      strftime(s, sizeof(s), "%F", &timeinfo);
+      String local_time(s);
+      json_log1["START"]["local_time"] = local_time;
 
       se_cnt1 = 0;
       CH1_Cnt = 0;
@@ -1256,16 +1256,16 @@ void Status_Judgment(float Amps_TRMS, int WaterSensorData, unsigned int l_hour, 
       json_log_flag2 = 1;
       json_log_cnt2 = 1;
       json_log_millis2 = millis();
-      String json_log_cnt2_string = String(json_log_cnt2);
-      json_log2[json_log_cnt2_string]["start"] = 1;
       struct tm timeinfo;
       if (!getLocalTime(&timeinfo))
       {
         Serial.println("Failed to obtain time");
         return;
       }
-      json_log2[json_log_cnt2_string]["local_time"] = asctime(&timeinfo);
-      json_log_cnt2++;
+      char s[100];
+      strftime(s, sizeof(s), "%F", &timeinfo);
+      String local_time(s);
+      json_log2["START"]["local_time"] = local_time;
 
       se_cnt2 = 0;
       CH2_Cnt = 0;
@@ -1302,16 +1302,16 @@ void Status_Judgment(float Amps_TRMS, int WaterSensorData, unsigned int l_hour, 
       json_log_flag1_w = 0;
       json_log_flag1 = 0;
 
-      String json_log_cnt1_string = String(json_log_cnt1);
-      json_log1[json_log_cnt1_string]["end"] = 1;
       struct tm timeinfo;
       if (!getLocalTime(&timeinfo))
       {
         Serial.println("Failed to obtain time");
         return;
       }
-      json_log1[json_log_cnt1_string]["local_time"] = asctime(&timeinfo);
-      json_log_cnt1++;
+      char s[100];
+      strftime(s, sizeof(s), "%F", &timeinfo);
+      String local_time(s);
+      json_log1["END"]["local_time"] = local_time;
       
       String json_log_data1 = "";
       serializeJson(json_log1, json_log_data1);
@@ -1330,16 +1330,16 @@ void Status_Judgment(float Amps_TRMS, int WaterSensorData, unsigned int l_hour, 
       json_log_flag2_w = 0;
       json_log_flag2 = 0;
 
-      String json_log_cnt2_string = String(json_log_cnt2);
-      json_log2[json_log_cnt2_string]["start"] = 1;
       struct tm timeinfo;
       if (!getLocalTime(&timeinfo))
       {
         Serial.println("Failed to obtain time");
         return;
       }
-      json_log2[json_log_cnt2_string]["local_time"] = asctime(&timeinfo);
-      json_log_cnt2++;
+      char s[100];
+      strftime(s, sizeof(s), "%F", &timeinfo);
+      String local_time(s);
+      json_log2["END"]["local_time"] = local_time;
       
       String json_log_data2 = "";
       serializeJson(json_log2, json_log_data2);
