@@ -33,6 +33,9 @@ StaticJsonDocument<200> doc;
 
 // ============================================== millis()&if()
 
+unsigned int timeSendFlag1 = 0;
+unsigned int timeSendFlag2 = 0;
+
 unsigned long printPeriod = 500;
 unsigned long previousMillis = 0;
 unsigned long previousMillis_end1 = 0;
@@ -914,6 +917,7 @@ void Dryer_Status_Judgment(float Amps_TRMS, int cnt, int m, unsigned long previo
     }
     if (cnt == 1) // CH1 건조기 동작 시작
     {
+      timeSendFlag1 = 1;
       json_log_flag1 = 1;
       json_log_cnt1 = 1;
       json_log_millis1 = millis();
@@ -936,6 +940,7 @@ void Dryer_Status_Judgment(float Amps_TRMS, int cnt, int m, unsigned long previo
       Serial.print(ChannelNum);
       Serial.println(" Dryer Started");
       SendStatus(ChannelNum, 0);
+      timeSendFlag1 = 0;
     }
     m1 = 1;
   }
@@ -959,6 +964,8 @@ void Dryer_Status_Judgment(float Amps_TRMS, int cnt, int m, unsigned long previo
     }
     if (cnt == 1) // CH2 건조기 동작 시작
     {
+      timeSendFlag2 = 1;
+      
       json_log_flag2 = 1;
       json_log_cnt2 = 1;
       json_log_millis2 = millis();
@@ -981,6 +988,7 @@ void Dryer_Status_Judgment(float Amps_TRMS, int cnt, int m, unsigned long previo
       Serial.print(ChannelNum);
       Serial.println(" Dryer Started");
       SendStatus(ChannelNum, 0);
+      timeSendFlag2 = 0;
     }
     m2 = 1;
   }
@@ -1003,6 +1011,8 @@ void Dryer_Status_Judgment(float Amps_TRMS, int cnt, int m, unsigned long previo
       ;
     else if (ChannelNum == 1 && millis() - previousMillis_end >= CH1_EndDelay_D) // CH1 건조기 동작 종료
     {
+      timeSendFlag1 = 1;
+      
       json_log_flag1_c = 0;
       json_log_flag1 = 0;
 
@@ -1027,9 +1037,13 @@ void Dryer_Status_Judgment(float Amps_TRMS, int cnt, int m, unsigned long previo
       CH1_Cnt = 1;
       digitalWrite(PIN_CH1_LED, LOW);
       CH1_CurrStatus = 1;
+
+      timeSendFlag1 = 0;
     }
     else if (ChannelNum == 2 && millis() - previousMillis_end >= CH2_EndDelay_D) // CH2 건조기 동작 종료
     {
+      timeSendFlag2 = 1;
+      
       json_log_flag2_c = 0;
       json_log_flag2 = 0;
 
@@ -1054,6 +1068,8 @@ void Dryer_Status_Judgment(float Amps_TRMS, int cnt, int m, unsigned long previo
       CH2_Cnt = 1;
       digitalWrite(PIN_CH2_LED, LOW);
       CH2_CurrStatus = 1;
+
+      timeSendFlag2 = 0;
     }
   }
 }
@@ -1268,6 +1284,8 @@ void Status_Judgment(float Amps_TRMS, int WaterSensorData, unsigned int l_hour, 
   {
     if (cnt == 1) // CH1 세탁기 동작 시작
     {
+      timeSendFlag1 = 1;
+      
       json_log_flag1 = 1;
       json_log_cnt1 = 1;
       json_log_millis1 = millis();
@@ -1290,6 +1308,8 @@ void Status_Judgment(float Amps_TRMS, int WaterSensorData, unsigned int l_hour, 
       Serial.print(ChannelNum);
       Serial.println(" Washer Started");
       SendStatus(ChannelNum, 0);
+
+      timeSendFlag1 = 0;
     }
     m1 = 1;
   }
@@ -1297,6 +1317,8 @@ void Status_Judgment(float Amps_TRMS, int WaterSensorData, unsigned int l_hour, 
   {
     if (cnt == 1) // CH2 세탁기 동작 시작
     {
+      timeSendFlag2 = 1;
+      
       json_log_flag2 = 1;
       json_log_cnt2 = 1;
       json_log_millis2 = millis();
@@ -1319,6 +1341,8 @@ void Status_Judgment(float Amps_TRMS, int WaterSensorData, unsigned int l_hour, 
       Serial.print(ChannelNum);
       Serial.println(" Washer Started");
       SendStatus(ChannelNum, 0);
+
+      timeSendFlag2 = 0;
     }
     m2 = 1;
   }
@@ -1341,6 +1365,8 @@ void Status_Judgment(float Amps_TRMS, int WaterSensorData, unsigned int l_hour, 
       ;
     else if (ChannelNum == 1 && millis() - previousMillis_end >= CH1_EndDelay_W) // CH1 세탁기 동작 종료
     {
+      timeSendFlag1 = 1;
+      
       json_log_flag1_c = 0;
       json_log_flag1_f = 0;
       json_log_flag1_w = 0;
@@ -1367,9 +1393,13 @@ void Status_Judgment(float Amps_TRMS, int WaterSensorData, unsigned int l_hour, 
       CH1_Cnt = 1;
       digitalWrite(PIN_CH1_LED, LOW);
       CH1_CurrStatus = 1;
+
+      timeSendFlag1 = 0;
     }
     else if (ChannelNum == 2 && millis() - previousMillis_end >= CH2_EndDelay_W) // CH2 세탁기 동작 종료
     {
+      timeSendFlag2 = 1;
+      
       json_log_flag2_c = 0;
       json_log_flag2_f = 0;
       json_log_flag2_w = 0;
@@ -1396,6 +1426,8 @@ void Status_Judgment(float Amps_TRMS, int WaterSensorData, unsigned int l_hour, 
       CH2_Cnt = 1;
       digitalWrite(PIN_CH2_LED, LOW);
       CH2_CurrStatus = 1;
+
+      timeSendFlag2 = 0;
     }
   }
 }
