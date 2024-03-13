@@ -33,9 +33,6 @@ StaticJsonDocument<200> doc;
 
 // ============================================== millis()&if()
 
-unsigned int timeSendFlag1 = 0;
-unsigned int timeSendFlag2 = 0;
-
 unsigned long printPeriod = 500;
 unsigned long previousMillis = 0;
 unsigned long previousMillis_end1 = 0;
@@ -46,6 +43,9 @@ unsigned long led_millis_prev;
 unsigned long curr_millis;
 
 int m1 = 0, m2 = 0;
+
+unsigned int timeSendFlag1 = 0;
+unsigned int timeSendFlag2 = 0;
 
 bool mode_debug = false;
 
@@ -286,9 +286,17 @@ int SendStatus(int ch, bool status)
     StaticJsonDocument<100> CurrStatus;
     CurrStatus["title"] = "Update";
     if (ch == 1)
+    {
       CurrStatus["id"] = CH1_DeviceNo;
+      CurrStatus["type"] = timeSendFlag1;
+      timeSendFlag1 = 0;
+    }
     if (ch == 2)
+    {
       CurrStatus["id"] = CH2_DeviceNo;
+      CurrStatus["type"] = timeSendFlag2;
+      timeSendFlag2 = 0;
+    }
     CurrStatus["state"] = status;
     String CurrStatus_String;
     serializeJson(CurrStatus, CurrStatus_String);
@@ -616,90 +624,6 @@ void loop()
   }
 }
 
-// int SENSDATA_START(String command)
-// {
-//   Serial.println("SENS~");
-//   int cnt = 0;
-//   int num = 0;
-//   if (!(command.compareTo("SENSDATA_START")))
-//   {
-//     Serial.println("AT+OK SENSDATA_START");
-//     Serial.println("Waiting for 30 sec...");
-//     Serial.println("CLOSE SERIAL PORT AND OPEN EXCEL LOG PROGRAM");
-//     delay(30000);
-//     Serial.println("CLEARDATA"); //처음에 데이터 리셋
-//     Serial.println("LABEL,No.,AMP1,Drain1,L/h1,AMP2,Drain2,L/h2"); //엑셀 첫행 데이터 이름 설정
-//     RunningStatistics inputStats1;
-//     RunningStatistics inputStats2;
-
-//     inputStats1.setWindowSecs(windowLength);
-//     inputStats2.setWindowSecs(windowLength);
-//     while (1)
-//     {
-//       if (Serial.available())
-//       {
-//         SerialData = Serial.readStringUntil('\n');
-//         dex = SerialData.indexOf('+');
-//         dex1 = SerialData.indexOf('"');
-//         end = SerialData.length();
-//         command = SerialData.substring(dex + 1, dex1);
-//         if (!(command.compareTo("SENSDATA_END")))
-//         {
-//           break;
-//         }
-//       }
-
-//       if (cnt >= 500)
-//       {
-//         ACS_Value1 = analogRead(ACS_Pin1);
-//         ACS_Value2 = analogRead(ACS_Pin2);
-
-//         inputStats1.input(ACS_Value1);
-//         inputStats2.input(ACS_Value2);
-
-//         Amps_TRMS1 = intercept + slope * inputStats1.sigma();
-//         Amps_TRMS2 = intercept + slope * inputStats2.sigma();
-
-//         WaterSensorData1 = digitalRead(Drain_1);
-//         WaterSensorData2 = digitalRead(Drain_2);
-
-//         l_hour1 = (flow_frequency1 * 60 / 7.5);
-//         l_hour2 = (flow_frequency2 * 60 / 7.5);
-
-//         flow_frequency1 = 0;
-//         flow_frequency2 = 0;
-//         num++;
-//         cnt = 0;
-//         Serial.print("DATA,");
-//         Serial.print(num);
-//         Serial.print(",");
-//         Serial.print(Amps_TRMS1);
-//         Serial.print(",");
-//         Serial.print(WaterSensorData1);
-//         Serial.print(",");
-//         Serial.print(l_hour1);
-//         Serial.print(",");
-//         Serial.print(Amps_TRMS2);
-//         Serial.print(",");
-//         Serial.print(WaterSensorData2);
-//         Serial.print(",");
-//         Serial.print(l_hour2);
-//         //Serial.print("Time : ");
-//         //Serial.println(millis());
-//         Serial.println();
-//       }
-//       cnt++;
-//       delay(1);
-//     }
-//     return 1;
-//   }
-
-//   else
-//   {
-//     return 0;
-//   }
-// }
-
 int CH1_SETVAR(String SerialData, int dex1, int dexc, int end)
 {
   dexc = SerialData.indexOf(',');
@@ -940,7 +864,6 @@ void Dryer_Status_Judgment(float Amps_TRMS, int cnt, int m, unsigned long previo
       Serial.print(ChannelNum);
       Serial.println(" Dryer Started");
       SendStatus(ChannelNum, 0);
-      timeSendFlag1 = 0;
     }
     m1 = 1;
   }
@@ -988,7 +911,6 @@ void Dryer_Status_Judgment(float Amps_TRMS, int cnt, int m, unsigned long previo
       Serial.print(ChannelNum);
       Serial.println(" Dryer Started");
       SendStatus(ChannelNum, 0);
-      timeSendFlag2 = 0;
     }
     m2 = 1;
   }
@@ -1037,8 +959,6 @@ void Dryer_Status_Judgment(float Amps_TRMS, int cnt, int m, unsigned long previo
       CH1_Cnt = 1;
       digitalWrite(PIN_CH1_LED, LOW);
       CH1_CurrStatus = 1;
-
-      timeSendFlag1 = 0;
     }
     else if (ChannelNum == 2 && millis() - previousMillis_end >= CH2_EndDelay_D) // CH2 건조기 동작 종료
     {
@@ -1068,8 +988,6 @@ void Dryer_Status_Judgment(float Amps_TRMS, int cnt, int m, unsigned long previo
       CH2_Cnt = 1;
       digitalWrite(PIN_CH2_LED, LOW);
       CH2_CurrStatus = 1;
-
-      timeSendFlag2 = 0;
     }
   }
 }
@@ -1308,8 +1226,6 @@ void Status_Judgment(float Amps_TRMS, int WaterSensorData, unsigned int l_hour, 
       Serial.print(ChannelNum);
       Serial.println(" Washer Started");
       SendStatus(ChannelNum, 0);
-
-      timeSendFlag1 = 0;
     }
     m1 = 1;
   }
@@ -1341,8 +1257,6 @@ void Status_Judgment(float Amps_TRMS, int WaterSensorData, unsigned int l_hour, 
       Serial.print(ChannelNum);
       Serial.println(" Washer Started");
       SendStatus(ChannelNum, 0);
-
-      timeSendFlag2 = 0;
     }
     m2 = 1;
   }
@@ -1393,8 +1307,6 @@ void Status_Judgment(float Amps_TRMS, int WaterSensorData, unsigned int l_hour, 
       CH1_Cnt = 1;
       digitalWrite(PIN_CH1_LED, LOW);
       CH1_CurrStatus = 1;
-
-      timeSendFlag1 = 0;
     }
     else if (ChannelNum == 2 && millis() - previousMillis_end >= CH2_EndDelay_W) // CH2 세탁기 동작 종료
     {
@@ -1426,8 +1338,6 @@ void Status_Judgment(float Amps_TRMS, int WaterSensorData, unsigned int l_hour, 
       CH2_Cnt = 1;
       digitalWrite(PIN_CH2_LED, LOW);
       CH2_CurrStatus = 1;
-
-      timeSendFlag2 = 0;
     }
   }
 }
