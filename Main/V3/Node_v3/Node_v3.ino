@@ -1,5 +1,4 @@
 #include <Arduino.h>
-#include <time.h>
 #include <stdlib.h>
 #include <string.h>
 #include <WiFi.h>
@@ -422,24 +421,22 @@ void setup()
 
 void loop()
 {
+  if (wifi_fail == 1)
+  {
+    digitalWrite(PIN_STATUS, HIGH);
+    wifi_fail = 0;
+    String ip = WiFi.localIP().toString();
+    webSocket.beginSSL(Server_domain, Server_port, Server_url);
+    char HeaderData[35];
+    sprintf(HeaderData, "HWID: %s\r\nCH1: %s\r\nCH2: %s", serial_no.c_str(), CH1_DeviceNo.c_str(), CH2_DeviceNo.c_str());
+    webSocket.setExtraHeaders(HeaderData);
+    webSocket.setAuthorization(auth_id.c_str(), auth_passwd.c_str());
+    webSocket.onEvent(webSocketEvent);
+  }
   curr_millis = millis();
   if (WiFi.status() == WL_CONNECTED)
   {
     webSocket.loop();
-    if (wifi_fail == 1)
-    {
-      digitalWrite(PIN_STATUS, HIGH);
-      wifi_fail = 0;
-      String ip = WiFi.localIP().toString();
-      configTime(3600 * timeZone, 0, ntpServer);
-      printLocalTime();
-      webSocket.beginSSL(Server_domain, Server_port, Server_url);
-      char HeaderData[35];
-      sprintf(HeaderData, "HWID: %s\r\nCH1: %s\r\nCH2: %s", serial_no.c_str(), CH1_DeviceNo.c_str(), CH2_DeviceNo.c_str());
-      webSocket.setExtraHeaders(HeaderData);
-      webSocket.setAuthorization(auth_id.c_str(), auth_passwd.c_str());
-      webSocket.onEvent(webSocketEvent);
-    }
   }
   else
   {
@@ -608,7 +605,6 @@ void loop()
       else if (!(AT_Command.compareTo("WHATTIMEISIT")))
       {
         Serial.println("AT+OK WHATTIMEISIT");
-        printLocalTime();
       }
       else if (!(AT_Command.compareTo("REBOOT")))
       {
@@ -845,15 +841,7 @@ void Dryer_Status_Judgment(float Amps_TRMS, int cnt, int m, unsigned long previo
       json_log_flag1 = 1;
       json_log_cnt1 = 1;
       json_log_millis1 = millis();
-      struct tm timeinfo;
-      if (!getLocalTime(&timeinfo))
-      {
-        Serial.println("Failed to obtain time");
-        return;
-      }
-      char s[100];
-      strftime(s, sizeof(s), "%F %T", &timeinfo);
-      String local_time(s);
+      String local_time = "";
       json_log1["START"]["local_time"] = local_time;
 
       //dryer_cnt1 = 0;
@@ -892,15 +880,8 @@ void Dryer_Status_Judgment(float Amps_TRMS, int cnt, int m, unsigned long previo
       json_log_flag2 = 1;
       json_log_cnt2 = 1;
       json_log_millis2 = millis();
-      struct tm timeinfo;
-      if (!getLocalTime(&timeinfo))
-      {
-        Serial.println("Failed to obtain time");
-        return;
-      }
-      char s[100];
-      strftime(s, sizeof(s), "%F %T", &timeinfo);
-      String local_time(s);
+
+      String local_time = "";
       json_log2["START"]["local_time"] = local_time;
 
       //dryer_cnt2 = 0;
@@ -938,15 +919,8 @@ void Dryer_Status_Judgment(float Amps_TRMS, int cnt, int m, unsigned long previo
       json_log_flag1_c = 0;
       json_log_flag1 = 0;
 
-      struct tm timeinfo;
-      if (!getLocalTime(&timeinfo))
-      {
-        Serial.println("Failed to obtain time");
-        return;
-      }
-      char s[100];
-      strftime(s, sizeof(s), "%F %T", &timeinfo);
-      String local_time(s);
+
+      String local_time = "";
       json_log1["END"]["local_time"] = local_time;
       
       String json_log_data1 = "";
@@ -967,15 +941,8 @@ void Dryer_Status_Judgment(float Amps_TRMS, int cnt, int m, unsigned long previo
       json_log_flag2_c = 0;
       json_log_flag2 = 0;
 
-      struct tm timeinfo;
-      if (!getLocalTime(&timeinfo))
-      {
-        Serial.println("Failed to obtain time");
-        return;
-      }
-      char s[100];
-      strftime(s, sizeof(s), "%F %T", &timeinfo);
-      String local_time(s);
+
+      String local_time = "";
       json_log2["END"]["local_time"] = local_time;
       
       String json_log_data2 = "";
@@ -1207,15 +1174,8 @@ void Status_Judgment(float Amps_TRMS, int WaterSensorData, unsigned int l_hour, 
       json_log_flag1 = 1;
       json_log_cnt1 = 1;
       json_log_millis1 = millis();
-      struct tm timeinfo;
-      if (!getLocalTime(&timeinfo))
-      {
-        Serial.println("Failed to obtain time");
-        return;
-      }
-      char s[100];
-      strftime(s, sizeof(s), "%F %T", &timeinfo);
-      String local_time(s);
+
+      String local_time = "";
       json_log1["START"]["local_time"] = local_time;
 
       se_cnt1 = 0;
@@ -1238,15 +1198,8 @@ void Status_Judgment(float Amps_TRMS, int WaterSensorData, unsigned int l_hour, 
       json_log_flag2 = 1;
       json_log_cnt2 = 1;
       json_log_millis2 = millis();
-      struct tm timeinfo;
-      if (!getLocalTime(&timeinfo))
-      {
-        Serial.println("Failed to obtain time");
-        return;
-      }
-      char s[100];
-      strftime(s, sizeof(s), "%F %T", &timeinfo);
-      String local_time(s);
+
+      String local_time = "";
       json_log2["START"]["local_time"] = local_time;
 
       se_cnt2 = 0;
@@ -1285,16 +1238,7 @@ void Status_Judgment(float Amps_TRMS, int WaterSensorData, unsigned int l_hour, 
       json_log_flag1_f = 0;
       json_log_flag1_w = 0;
       json_log_flag1 = 0;
-
-      struct tm timeinfo;
-      if (!getLocalTime(&timeinfo))
-      {
-        Serial.println("Failed to obtain time");
-        return;
-      }
-      char s[100];
-      strftime(s, sizeof(s), "%F %T", &timeinfo);
-      String local_time(s);
+      String local_time = "";
       json_log1["END"]["local_time"] = local_time;
       
       String json_log_data1 = "";
@@ -1316,16 +1260,7 @@ void Status_Judgment(float Amps_TRMS, int WaterSensorData, unsigned int l_hour, 
       json_log_flag2_f = 0;
       json_log_flag2_w = 0;
       json_log_flag2 = 0;
-
-      struct tm timeinfo;
-      if (!getLocalTime(&timeinfo))
-      {
-        Serial.println("Failed to obtain time");
-        return;
-      }
-      char s[100];
-      strftime(s, sizeof(s), "%F %T", &timeinfo);
-      String local_time(s);
+      String local_time = "";
       json_log2["END"]["local_time"] = local_time;
       
       String json_log_data2 = "";
@@ -1437,15 +1372,4 @@ void NETWORK_INFO()
   Serial.println(ap_ssid);
   Serial.print("PASSWORD = ");
   Serial.print(ap_passwd);
-}
-
-void printLocalTime()
-{
-  struct tm timeinfo;
-  if (!getLocalTime(&timeinfo))
-  {
-    Serial.println("Failed to obtain time");
-    return;
-  }
-  Serial.println(&timeinfo, "%A, %B %d %Y %H:%M:%S");
 }
