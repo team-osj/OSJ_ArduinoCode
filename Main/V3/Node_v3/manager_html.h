@@ -139,28 +139,8 @@ const char manager_html[] PROGMEM = R"rawliteral(
                 <td>%MAC%</td>
               </tr>
               <tr>
-                <th scope="col">TCP/IP Status</th>
-                <td>%TCP_STATUS%</td>
-              </tr>
-              <tr>
-                <th scope="col">TCP/IP Server</th>
-                <td>%TCP_IP%:%TCP_PORT%</td>
-              </tr>
-              <tr>
-                <th scope="col">Mode</th>
-                <td>%MODE%</td>
-              </tr>
-              <tr>
-                <th scope="col">RS232 Baud Rate</th>
-                <td>%BAUD%</td>
-              </tr>
-              <tr>
                 <th scope="col">Flash Size</th>
                 <td>%FlashSize% KiB</td>
-              </tr>
-              <tr>
-                <th scope="col">SPIFFS Size</th>
-                <td>%SPIFFS_Used% KiB Used / Max %SPIFFS_Total% KiB</td>
               </tr>
               <tr>
                 <th scope="col">Heap Memory</th>
@@ -170,7 +150,40 @@ const char manager_html[] PROGMEM = R"rawliteral(
                 <th scope="col">F/W Build Date</th>
                 <td>%BUILD_VER%</td>
               </tr>
-
+              <tr>
+                <th scope="col">CH1</th>
+                <td>%CH1_DeviceNo%</td>
+                <th>Enable</th>
+                <td>%CH1_Live%</td>
+              <tr>
+                <th scope="col">C_W, Flow, C_D</th>
+                <td>%CH1_Curr_W%</td>
+                <td>%CH1_Flow_W%</td>
+                <td>%CH1_Curr_D%</td>
+              </tr>
+              <tr>
+                <th scope="col">EndDelay_W, D</th>
+                <td>%CH1_EndDelay_W%</td>
+                <td>%CH1_EndDelay_D%</td>
+                <td></td>
+              </tr>
+              <tr>
+                <th scope="col">CH2</th>
+                <td>%CH2_DeviceNo%</td>
+                <th>Enable</th>
+                <td>%CH2_Live%</td>
+              <tr>
+                <th scope="col">C_W, Flow, C_D</th>
+                <td>%CH2_Curr_W%</td>
+                <td>%CH2_Flow_W%</td>
+                <td>%CH2_Curr_D%</td>
+              </tr>
+              <tr>
+                <th scope="col">EndDelay_W, D</th>
+                <td>%CH2_EndDelay_W%</td>
+                <td>%CH2_EndDelay_D%</td>
+                <td></td>
+              </tr>
             </table>
           </fieldset>
         </center>
