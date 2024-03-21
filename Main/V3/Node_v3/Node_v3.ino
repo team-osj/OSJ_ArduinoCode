@@ -62,9 +62,6 @@ unsigned long led_millis_prev;
 unsigned long curr_millis;
 unsigned long server_retry_millis;
 
-unsigned long Millis_OTA = millis();
-unsigned long previousMillis_OTA = 0;
-
 int m1 = 0, m2 = 0;
 
 unsigned int timeSendFlag1 = 0;
@@ -152,7 +149,7 @@ void WiFiGotIP(WiFiEvent_t event, WiFiEventInfo_t info)
 {
   Serial.print("WiFi connected ");
   Serial.println(WiFi.localIP());
-  wifi_fail = 0;
+  //wifi_fail = 0;
 }
 
 void WiFiStationDisconnected(WiFiEvent_t event, WiFiEventInfo_t info)
@@ -456,6 +453,7 @@ void loop()
   {
     if(curr_millis - 200 >= server_retry_millis)
     {
+      webSocket.disconnect();
       server_retry_millis = curr_millis;
       String ip = WiFi.localIP().toString();
       webSocket.beginSSL(Server_domain, Server_port, Server_url);
