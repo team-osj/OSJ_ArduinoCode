@@ -15,7 +15,6 @@
 #include "FS.h"
 #include <ESPmDNS.h>
 #include <Update.h>
-#include "config.h"
 #include "manager_html.h"
 #include "ok_html.h"
 #include "time.h"
@@ -1527,6 +1526,64 @@ String processor(const String& var)
   {
     return build_date;
   }
+  //=======================================CH1
+  if(var == "CH1_DeviceNo")
+  {
+    return CH1_DeviceNo;
+  }
+  if(var == "CH1_Live")
+  {
+    return String(CH1_Live);
+  }
+  if(var == "CH1_Curr_W")
+  {
+    return String(CH1_Curr_W);
+  }
+  if(var == "CH1_Flow_W")
+  {
+    return String(CH1_Flow_W);
+  }
+  if(var == "CH1_Curr_D")
+  {
+    return String(CH1_Curr_D);
+  }
+  if(var == "CH1_EndDelay_W")
+  {
+    return String(CH1_EndDelay_W);
+  }
+  if(var == "CH1_EndDelay_D")
+  {
+    return String(CH1_EndDelay_D);
+  }
+  //=======================================CH2
+  if(var == "CH2_DeviceNo")
+  {
+    return CH2_DeviceNo;
+  }
+  if(var == "CH2_Live")
+  {
+    return String(CH2_Live);
+  }
+  if(var == "CH2_Curr_W")
+  {
+    return String(CH2_Curr_W);
+  }
+  if(var == "CH2_Flow_W")
+  {
+    return String(CH2_Flow_W);
+  }
+  if(var == "CH2_Curr_D")
+  {
+    return String(CH2_Curr_D);
+  }
+  if(var == "CH2_EndDelay_W")
+  {
+    return String(CH2_EndDelay_W);
+  }
+  if(var == "CH2_EndDelay_D")
+  {
+    return String(CH2_EndDelay_D);
+  }
   return String();
 }
 
@@ -1534,7 +1591,7 @@ void setupAsyncServer()
 {
   server.on("/", HTTP_GET, [](AsyncWebServerRequest *request)
   {
-    if(!request->authenticate(http_username, http_password))
+    if(!request->authenticate(auth_id.c_str(), auth_passwd.c_str()))
     {
       return request->requestAuthentication();
     }
@@ -1564,22 +1621,26 @@ void setupAsyncServer()
     request->redirect("/");
   });
 
-  server.on("/tcpip", HTTP_POST, [](AsyncWebServerRequest *request) {
+  server.on("/auth", HTTP_POST, [](AsyncWebServerRequest *request) {
     int params = request->params();
     for(int i=0;i<params;i++){
       AsyncWebParameter* p = request->getParam(i);
       if(p->isPost()){
-        if (p->name() == "TCP_IP") {
-          String tcp_ip = p->value().c_str();
-          Serial.print("IP set to : ");
-          Serial.println(tcp_ip);
-          jsonBuffer["tcp_ip"] = tcp_ip;
+        if (p->name() == "AUTH_ID") {
+          auth_id = p->value().c_str();
+          Serial.print("AUTH_ID : ");
+          Serial.println(auth_id);
+          if(auth_id != ""){
+            putString("AUTH_ID", auth_id);
+          }
         }
-        if (p->name() == "TCP_PORT") {
-          String tcp_port = p->value().c_str();
-          Serial.print("Port set to : ");
-          Serial.println(tcp_port);
-          jsonBuffer["tcp_port"] = tcp_port;
+        if (p->name() == "AUTH_PASSWD") {
+          auth_passwd = p->value().c_str();
+          Serial.print("AUTH_PASSWD : ");
+          Serial.println(auth_passwd);
+          if(auth_passwd != ""){
+            putString("AUTH_PASSWD", auth_passwd);
+          }
         }
       }
     }
@@ -1626,33 +1687,145 @@ void setupAsyncServer()
       }
     }
   });
-
-  server.on("/baud", HTTP_POST, [](AsyncWebServerRequest *request) {
+  
+  server.on("/CH1", HTTP_POST, [](AsyncWebServerRequest *request) {
+    String Command;
+    String Value;
     int params = request->params();
     for(int i=0;i<params;i++){
       AsyncWebParameter* p = request->getParam(i);
       if(p->isPost()){
-        if (p->name() == "BAUD") {
-          String baudrate = p->value().c_str();
-          Serial.print("BAUD set to : ");
-          Serial.println(baudrate);
-          jsonBuffer["baud"] = baudrate;
+        if (p->name() == "CH1") {
+          Command = p->value().c_str();
+          Serial.print("CH1_Commend : ");
+          Serial.println(Command);
+        }
+        if (p->name() == "value") {
+          Value = p->value().c_str();
+          Serial.print("CH1_Value : ");
+          Serial.println(Value);
+          if(Value != ""){
+            if (Command == "DeviceNo")
+            {
+              Serial.print("CH1_DeviceNo : ");
+              Serial.println(Value);
+              preferences.putString("CH1_DeviceNo", Value);
+            }
+            else if (Command == "Current_Wash")
+            {
+              Serial.print("CH1_Curr_W : ");
+              Serial.println(Value);
+              float var = Value.toFloat();
+              preferences.putFloat("CH1_Curr_W", var);
+            }
+            else if (Command == "Flow_Wash")
+            {
+              Serial.print("CH1_Flow_W : ");
+              Serial.println(Value);
+              int var = Value.toInt();
+              preferences.putUInt("CH1_Flow_W", var);
+            }
+            else if (Command == "Current_Dry")
+            {
+              Serial.print("CH1_Curr_D : ");
+              Serial.println(Value);
+              float var = Value.toFloat();
+              preferences.putFloat("CH1_Curr_D", var);
+            }
+            else if (Command == "EndDelay_Wash")
+            {
+              Serial.print("CH1_EndDelay_W : ");
+              Serial.println(Value);
+              int var = Value.toInt();
+              preferences.putUInt("CH1_EndDelay_W", var);
+            }
+            else if (Command == "EndDelay_Dry")
+            {
+              Serial.print("CH1_EndDelay_D : ");
+              Serial.println(Value);
+              int var = Value.toInt();
+              preferences.putUInt("CH1_EndDelay_D", var);
+            }
+            else if (Command == "Enable")
+            {
+              Serial.print("CH1_Enable : ");
+              Serial.println(Value);
+              int var = Value.toInt();
+              preferences.putBool("CH1_Live", var);
+            }
+          }
         }
       }
     }
     request->redirect("/");
   });
-
-  server.on("/mode", HTTP_POST, [](AsyncWebServerRequest *request) {
+  
+  server.on("/CH2", HTTP_POST, [](AsyncWebServerRequest *request) {
+    String Command;
+    String Value;
     int params = request->params();
     for(int i=0;i<params;i++){
       AsyncWebParameter* p = request->getParam(i);
       if(p->isPost()){
-        if (p->name() == "MODE") {
-          String mode = p->value().c_str();
-          Serial.print("MODE set to : ");
-          Serial.println(mode);
-          jsonBuffer["mode"] = mode;
+        if (p->name() == "CH2") {
+          Command = p->value().c_str();
+          Serial.print("CH2_Commend : ");
+          Serial.println(Command);
+        }
+        if (p->name() == "value") {
+          Value = p->value().c_str();
+          Serial.print("CH2_Value : ");
+          Serial.println(Value);
+          if(Value != ""){
+            if (Command == "DeviceNo")
+            {
+              Serial.print("CH2_DeviceNo : ");
+              Serial.println(Value);
+              preferences.putString("CH2_DeviceNo", Value);
+            }
+            else if (Command == "Current_Wash")
+            {
+              Serial.print("CH2_Curr_W : ");
+              Serial.println(Value);
+              float var = Value.toFloat();
+              preferences.putFloat("CH2_Curr_W", var);
+            }
+            else if (Command == "Flow_Wash")
+            {
+              Serial.print("CH2_Flow_W : ");
+              Serial.println(Value);
+              int var = Value.toInt();
+              preferences.putUInt("CH2_Flow_W", var);
+            }
+            else if (Command == "Current_Dry")
+            {
+              Serial.print("CH2_Curr_D : ");
+              Serial.println(Value);
+              float var = Value.toFloat();
+              preferences.putFloat("CH2_Curr_D", var);
+            }
+            else if (Command == "EndDelay_Wash")
+            {
+              Serial.print("CH2_EndDelay_W : ");
+              Serial.println(Value);
+              int var = Value.toInt();
+              preferences.putUInt("CH2_EndDelay_W", var);
+            }
+            else if (Command == "EndDelay_Dry")
+            {
+              Serial.print("CH2_EndDelay_D : ");
+              Serial.println(Value);
+              int var = Value.toInt();
+              preferences.putUInt("CH2_EndDelay_D", var);
+            }
+            else if (Command == "Enable")
+            {
+              Serial.print("CH2_Enable : ");
+              Serial.println(Value);
+              int var = Value.toInt();
+              preferences.putBool("CH2_Live", var);
+            }
+          }
         }
       }
     }
@@ -1661,7 +1834,7 @@ void setupAsyncServer()
 
   server.on("/reboot", HTTP_GET, [](AsyncWebServerRequest *request)
   {
-    if(!request->authenticate(http_username, http_password))
+    if(!request->authenticate(auth_id.c_str(), auth_passwd.c_str()))
     {
       return request->requestAuthentication();
     }

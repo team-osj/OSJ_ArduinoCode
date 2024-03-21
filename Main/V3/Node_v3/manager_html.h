@@ -139,18 +139,6 @@ const char manager_html[] PROGMEM = R"rawliteral(
                 <td>%MAC%</td>
               </tr>
               <tr>
-                <th scope="col">Flash Size</th>
-                <td>%FlashSize% KiB</td>
-              </tr>
-              <tr>
-                <th scope="col">Heap Memory</th>
-                <td>%Heap% KiB Left</td>
-              </tr>
-              <tr>
-                <th scope="col">F/W Build Date</th>
-                <td>%BUILD_VER%</td>
-              </tr>
-              <tr>
                 <th scope="col">CH1</th>
                 <td>%CH1_DeviceNo%</td>
                 <th>Enable</th>
@@ -184,6 +172,18 @@ const char manager_html[] PROGMEM = R"rawliteral(
                 <td>%CH2_EndDelay_D%</td>
                 <td></td>
               </tr>
+              <tr>
+                <th scope="col">Flash Size</th>
+                <td>%FlashSize% KiB</td>
+              </tr>
+              <tr>
+                <th scope="col">Heap Memory</th>
+                <td>%Heap% KiB Left</td>
+              </tr>
+              <tr>
+                <th scope="col">F/W Build Date</th>
+                <td>%BUILD_VER%</td>
+              </tr>
             </table>
           </fieldset>
         </center>
@@ -214,11 +214,11 @@ const char manager_html[] PROGMEM = R"rawliteral(
               <td>
                 <center>
                   <fieldset style="width:325px;background-color: #f7f7f7;">
-                    <legend>TCP/IP Client Setting</legend>
-                    <form method="POST" action="/tcpip">
+                    <legend>HTTP AUTH Setting</legend>
+                    <form method="POST" action="/auth">
                       <p>
-                        <input type="text" id="TCP_IP" name="TCP_IP" placeholder="Server IP"><br>
-                        <input type="text" id="TCP_PORT" name="TCP_PORT" placeholder="Port"><br>
+                        <input type="text" id="AUTH_ID" name="AUTH_ID" placeholder="ID"><br>
+                        <input type="text" id="AUTH_PASSWD" name="AUTH_PASSWD" placeholder="Password"><br>
                       <div id="spacer_10"></div>
                       </p>
                       <input type="submit" value="Submit">
@@ -232,21 +232,20 @@ const char manager_html[] PROGMEM = R"rawliteral(
               <td>
                 <center>
                   <fieldset style="width:325px;height:100px;background-color: #f7f7f7;">
-                    <legend>RS232 Baud Rate</legend>
-                    <form method="POST" action="/baud">
+                    <legend>CH1_Setting</legend>
+                    <form method="POST" action="/CH1">
                       <p>
-                        <select name="BAUD">
-                          <option value="none" selected>Select Baud Rate</option>
-                          <option value="300">300bps</option>
-                          <option value="1200">1200bps</option>
-                          <option value="2400">2400bps</option>
-                          <option value="4800">4800bps</option>
-                          <option value="9600">9600bps</option>
-                          <option value="19200">19200bps</option>
-                          <option value="38400">38400bps</option>
-                          <option value="57600">57600bps</option>
-                          <option value="115200">115200bps</option>
+                        <select name="CH1">
+                          <option value="none" selected>Select Command</option>
+                          <option value="DeviceNo">DeviceNo</option>
+                          <option value="Current_Wash">Current_Wash</option>
+                          <option value="Flow_Wash">Flow_Wash</option>
+                          <option value="Current_Dry">Current_Dry</option>
+                          <option value="EndDelay_Wash">EndDelay_Wash</option>
+                          <option value="EndDelay_Dry">EndDelay_Dry</option>
+                          <option value="Enable">Enable</option>
                         </select>
+                        <input type="text" id="Command" name="value" placeholder="value"><br>
                       <div id="spacer_10"></div>
                       </p>
                       <input type="submit" value="Submit">
@@ -257,11 +256,20 @@ const char manager_html[] PROGMEM = R"rawliteral(
               <td>
                 <center>
                   <fieldset style="width:325px;height:100px;background-color: #f7f7f7;">
-                    <legend>Mode Select</legend>
-                    <form method="POST" action="/mode">
+                    <legend>CH2_Setting</legend>
+                    <form method="POST" action="/CH2">
                       <p>
-                        <input type='radio' name='MODE' value='RS232' />RS232 Only
-                        <input type='radio' name='MODE' value='TCP/IP' />RS232+TCP/IP
+                        <select name="CH2">
+                          <option value="none" selected>Select Command</option>
+                          <option value="DeviceNo">DeviceNo</option>
+                          <option value="Current_Wash">Current_Wash</option>
+                          <option value="Flow_Wash">Flow_Wash</option>
+                          <option value="Current_Dry">Current_Dry</option>
+                          <option value="EndDelay_Wash">EndDelay_Wash</option>
+                          <option value="EndDelay_Dry">EndDelay_Dry</option>
+                          <option value="Enable">Enable</option>
+                        </select>
+                        <input type="text" id="Command" name="value" placeholder="value"><br>
                       <div id="spacer_10"></div>
                       </p>
                       <input type="submit" value="Submit">
@@ -274,26 +282,7 @@ const char manager_html[] PROGMEM = R"rawliteral(
 
           <div id="spacer_20"></div>
 
-          <fieldset style="width: 700px;background-color: #f7f7f7;">
-            <legend>Log Download</legend>
-            <form method="GET" action="/log">
-              <select name="LogNumber">
-                <option value="none" selected>Select Log</option>
-                <option value="1">-9Day</option>
-                <option value="2">-8Day</option>
-                <option value="3">-7Day</option>
-                <option value="4">-6Day</option>
-                <option value="5">-5Day</option>
-                <option value="6">-4Day</option>
-                <option value="7">-3Day</option>
-                <option value="8">-2Day</option>
-                <option value="9">-1Day</option>
-                <option value="10">Today</option>
-              </select>
-              <input type="submit" value="Download">
-            </form>
-            
-          </fieldset>
+          
 
           <div id="spacer_20"></div>
 
