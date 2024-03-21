@@ -60,6 +60,7 @@ unsigned long echoPeriod1 = 200;
 unsigned long echoPeriod2 = 200;
 unsigned long led_millis_prev;
 unsigned long curr_millis;
+unsigned long server_retry_millis;
 
 unsigned long Millis_OTA = millis();
 unsigned long previousMillis_OTA = 0;
@@ -151,6 +152,7 @@ void WiFiGotIP(WiFiEvent_t event, WiFiEventInfo_t info)
 {
   Serial.print("WiFi connected ");
   Serial.println(WiFi.localIP());
+  wifi_fail = 0;
 }
 
 void WiFiStationDisconnected(WiFiEvent_t event, WiFiEventInfo_t info)
@@ -444,6 +446,7 @@ void setup()
 
 void loop()
 {
+  curr_millis = millis();
   if(rebooting)
   {
     delay(100);
@@ -451,22 +454,25 @@ void loop()
   }
   if (wifi_fail == 1)
   {
-    digitalWrite(PIN_STATUS, HIGH);
-    wifi_fail = 0;
-    String ip = WiFi.localIP().toString();
-    webSocket.beginSSL(Server_domain, Server_port, Server_url);
-    char HeaderData[35];
-    sprintf(HeaderData, "HWID: %s\r\nCH1: %s\r\nCH2: %s", serial_no.c_str(), CH1_DeviceNo.c_str(), CH2_DeviceNo.c_str());
-    webSocket.setExtraHeaders(HeaderData);
-    webSocket.setAuthorization(auth_id.c_str(), auth_passwd.c_str());
-    webSocket.onEvent(webSocketEvent);
-    MDNS.begin(Device_Name);
-    Serial.printf("Host: http://%s.local/\n",Device_Name);
-    setupAsyncServer();
+    if(curr_millis - 200 >= server_retry_millis)
+    {
+      server_retry_millis = curr_millis;
+      String ip = WiFi.localIP().toString();
+      webSocket.beginSSL(Server_domain, Server_port, Server_url);
+      char HeaderData[35];
+      sprintf(HeaderData, "HWID: %s\r\nCH1: %s\r\nCH2: %s", serial_no.c_str(), CH1_DeviceNo.c_str(), CH2_DeviceNo.c_str());
+      webSocket.setExtraHeaders(HeaderData);
+      webSocket.setAuthorization(auth_id.c_str(), auth_passwd.c_str());
+      webSocket.onEvent(webSocketEvent);
+      MDNS.begin(Device_Name);
+      Serial.printf("Host: http://%s.local/\n",Device_Name);
+      setupAsyncServer();
+    }
   }
-  curr_millis = millis();
   if (WiFi.status() == WL_CONNECTED)
   {
+    digitalWrite(PIN_STATUS, HIGH);
+    wifi_fail = 0;
     webSocket.loop();
   }
   else
