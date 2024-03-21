@@ -149,7 +149,18 @@ void WiFiGotIP(WiFiEvent_t event, WiFiEventInfo_t info)
 {
   Serial.print("WiFi connected ");
   Serial.println(WiFi.localIP());
-  //wifi_fail = 0;
+  webSocket.disconnect();
+  server_retry_millis = curr_millis;
+  String ip = WiFi.localIP().toString();
+  webSocket.beginSSL(Server_domain, Server_port, Server_url);
+  char HeaderData[35];
+  sprintf(HeaderData, "HWID: %s\r\nCH1: %s\r\nCH2: %s", serial_no.c_str(), CH1_DeviceNo.c_str(), CH2_DeviceNo.c_str());
+  webSocket.setExtraHeaders(HeaderData);
+  webSocket.setAuthorization(auth_id.c_str(), auth_passwd.c_str());
+  webSocket.onEvent(webSocketEvent);
+  MDNS.begin(Device_Name);
+  Serial.printf("Host: http://%s.local/\n",Device_Name);
+  setupAsyncServer();
 }
 
 void WiFiStationDisconnected(WiFiEvent_t event, WiFiEventInfo_t info)
@@ -449,24 +460,24 @@ void loop()
     delay(100);
     ESP.restart();
   }
-  if (wifi_fail == 1)
-  {
-    if(curr_millis - 200 >= server_retry_millis)
-    {
-      webSocket.disconnect();
-      server_retry_millis = curr_millis;
-      String ip = WiFi.localIP().toString();
-      webSocket.beginSSL(Server_domain, Server_port, Server_url);
-      char HeaderData[35];
-      sprintf(HeaderData, "HWID: %s\r\nCH1: %s\r\nCH2: %s", serial_no.c_str(), CH1_DeviceNo.c_str(), CH2_DeviceNo.c_str());
-      webSocket.setExtraHeaders(HeaderData);
-      webSocket.setAuthorization(auth_id.c_str(), auth_passwd.c_str());
-      webSocket.onEvent(webSocketEvent);
-      MDNS.begin(Device_Name);
-      Serial.printf("Host: http://%s.local/\n",Device_Name);
-      setupAsyncServer();
-    }
-  }
+  // if (wifi_fail == 1)
+  // {
+  //   if(curr_millis - 200 >= server_retry_millis)
+  //   {
+  //     webSocket.disconnect();
+  //     server_retry_millis = curr_millis;
+  //     String ip = WiFi.localIP().toString();
+  //     webSocket.beginSSL(Server_domain, Server_port, Server_url);
+  //     char HeaderData[35];
+  //     sprintf(HeaderData, "HWID: %s\r\nCH1: %s\r\nCH2: %s", serial_no.c_str(), CH1_DeviceNo.c_str(), CH2_DeviceNo.c_str());
+  //     webSocket.setExtraHeaders(HeaderData);
+  //     webSocket.setAuthorization(auth_id.c_str(), auth_passwd.c_str());
+  //     webSocket.onEvent(webSocketEvent);
+  //     MDNS.begin(Device_Name);
+  //     Serial.printf("Host: http://%s.local/\n",Device_Name);
+  //     setupAsyncServer();
+  //   }
+  // }
   if (WiFi.status() == WL_CONNECTED)
   {
     digitalWrite(PIN_STATUS, HIGH);
