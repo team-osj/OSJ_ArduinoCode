@@ -8,7 +8,7 @@
 #include <Preferences.h>
 #include <nvs_flash.h>
 #include "ServerInfo.h"
-#include "EmonLib.h"'
+#include "EmonLib.h"
 
 #include <ESPAsyncWebServer.h>
 #include <AsyncTCP.h>
@@ -499,7 +499,7 @@ void loop()
 
       flow_frequency1 = 0; // 변수 초기화
       flow_frequency2 = 0;
-      Serial.print("CT1 : ");
+      /*Serial.print("CT1 : ");
       Serial.println(Amps_TRMS1, 3);
       Serial.print("Water1 : ");
       Serial.println(WaterSensorData1);
@@ -513,7 +513,7 @@ void loop()
       Serial.println(l_hour2);
       Serial.print("Time : ");
       Serial.println(millis());
-      Serial.println();
+      Serial.println();*/
     }
 
     if (CH1_Mode)

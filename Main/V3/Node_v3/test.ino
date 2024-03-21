@@ -612,7 +612,7 @@
 //  file.println(config.COMM_MODE);
 //  file.print("[SYSTEM] Last_Date: ");//Never LOL
 //  file.println(config.Last_Date);
-//  file.close();
+//  file.close(); 
 //  if (wifi_enable == false || setup_wifi(15000) == 1)
 //  {
 //    WiFi.softAP(config.Device_Name.c_str(), NULL);
