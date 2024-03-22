@@ -572,88 +572,88 @@ void loop()
     {
       int dex, dex1, dexc, end;
       String SerialData = Serial.readStringUntil('\n');
-      dex = SerialData.indexOf(' + ');
+      dex = SerialData.indexOf('+');
       dex1 = SerialData.indexOf('"');
       end = SerialData.length();
-      String AT_Command = SerialData.substring(dex + 1, dex1);
+      String AT_Command = SerialData.substring(dex+1, dex1);
       if (!(AT_Command.compareTo("HELP")))
       {
       }
       else if (!(AT_Command.compareTo("SENSDATA_START")))
       {
-        Serial.println("AT + OK SENSDATA_START");
+        Serial.println("AT+OK SENSDATA_START");
       }
       else if (!(AT_Command.compareTo("SOCKET_SEND")))
       {
       }
       else if (!(AT_Command.compareTo("UPDATE")))
       {
-        Serial.println("AT + OK UPDATE");
+        Serial.println("AT+OK UPDATE");
       }
       else if (!(AT_Command.compareTo("CH1_SETVAR")))
       {
-        Serial.println("AT + OK CH1_SETVAR");
+        Serial.println("AT+OK CH1_SETVAR");
         CH1_SETVAR(SerialData, dex1, dexc, end);
       }
       else if (!(AT_Command.compareTo("CH2_SETVAR")))
       {
-        Serial.println("AT + OK CH2_SETVAR");
+        Serial.println("AT+OK CH2_SETVAR");
         CH2_SETVAR(SerialData, dex1, dexc, end);
       }
       else if (!(AT_Command.compareTo("UPDATE")))
       {
-        Serial.println("AT + OK UPDATE");
+        Serial.println("AT+OK UPDATE");
       }
       else if (!(AT_Command.compareTo("NETWORK_INFO")))
       {
-        Serial.println("AT + OK NETWORK_INFO");
+        Serial.println("AT+OK NETWORK_INFO");
         NETWORK_INFO();
       }
       else if (!(AT_Command.compareTo("SETAP_SSID")))
       {
-        Serial.println("AT + OK SETAP_SSID");
-        putString("ap_ssid", SerialData.substring(dex1 + 1, end - 1));
+        Serial.println("AT+OK SETAP_SSID");
+        putString("ap_ssid", SerialData.substring(dex1+1, end - 1));
       }
       else if (!(AT_Command.compareTo("SETAP_PASSWD")))
       {
-        Serial.println("AT + OK SETAP_PASSWD");
-        putString("ap_passwd", SerialData.substring(dex1 + 1, end - 1));
+        Serial.println("AT+OK SETAP_PASSWD");
+        putString("ap_passwd", SerialData.substring(dex1+1, end - 1));
       }
       else if (!(AT_Command.compareTo("SET_SERIALNO")))
       {
-        Serial.println("AT + OK SET_SERIALNO");
-        putString("serial_no", SerialData.substring(dex1 + 1, end - 1));
+        Serial.println("AT+OK SET_SERIALNO");
+        putString("serial_no", SerialData.substring(dex1+1, end - 1));
       }
       else if (!(AT_Command.compareTo("SET_AUTH_ID")))
       {
-        Serial.println("AT + OK SET_AUTH_ID");
-        putString("AUTH_ID", SerialData.substring(dex1 + 1, end - 1));
+        Serial.println("AT+OK SET_AUTH_ID");
+        putString("AUTH_ID", SerialData.substring(dex1+1, end - 1));
       }
       else if (!(AT_Command.compareTo("SET_AUTH_PASSWD")))
       {
-        Serial.println("AT + OK SET_AUTH_PASSWD");
-        putString("AUTH_PASSWD", SerialData.substring(dex1 + 1, end - 1));
+        Serial.println("AT+OK SET_AUTH_PASSWD");
+        putString("AUTH_PASSWD", SerialData.substring(dex1+1, end - 1));
       }
       else if (!(AT_Command.compareTo("FORMAT_NVS")))
       {
-        Serial.println("AT + OK FORMAT_NVS");
+        Serial.println("AT+OK FORMAT_NVS");
         nvs_flash_erase();
         nvs_flash_init();
         ESP.restart();
       }
       else if (!(AT_Command.compareTo("SHOWMETHEMONEY")))
       {
-        Serial.println("AT + OK SHOWMETHEMONEY");
+        Serial.println("AT+OK SHOWMETHEMONEY");
         Serial.print(ESP.getFreeHeap());
         Serial.println("Byte");
       }
       else if (!(AT_Command.compareTo("WHATTIMEISIT")))
       {
-        Serial.println("AT + OK WHATTIMEISIT");
+        Serial.println("AT+OK WHATTIMEISIT");
       }
       else if (!(AT_Command.compareTo("REBOOT")))
       {
-        Serial.println("AT + OK REBOOT");
+        Serial.println("AT+OK REBOOT");
         delay(500);
         ESP.restart();
       }
@@ -668,8 +668,8 @@ void loop()
 int CH1_SETVAR(String SerialData, int dex1, int dexc, int end)
 {
   dexc = SerialData.indexOf(',');
-  String command = SerialData.substring(dex1 + 1, dexc);
-  String Number = SerialData.substring(dexc + 1, end - 1);
+  String command = SerialData.substring(dex1+1, dexc);
+  String Number = SerialData.substring(dexc+1, end - 1);
   if (command == "DeviceNo")
   {
     Serial.print("CH1_DeviceNo : ");
@@ -729,8 +729,8 @@ int CH1_SETVAR(String SerialData, int dex1, int dexc, int end)
 int CH2_SETVAR(String SerialData, int dex1, int dexc, int end)
 {
   dexc = SerialData.indexOf(',');
-  String command = SerialData.substring(dex1 + 1, dexc);
-  String Number = SerialData.substring(dexc + 1, end - 1);
+  String command = SerialData.substring(dex1+1, dexc);
+  String Number = SerialData.substring(dexc+1, end - 1);
   if (command == "DeviceNo")
   {
     Serial.print("CH2_DeviceNo : ");
@@ -1348,7 +1348,7 @@ void SetDefaultVal()
   CH1_Live = preferences.getBool("CH1_Live", true);
   CH2_Live = preferences.getBool("CH2_Live", true);
 
-  Device_Name = Device_Name + serial_no;
+  Device_Name = Device_Name+serial_no;
   WiFi.setHostname(Device_Name.c_str());
   Serial.print("My Name Is : ");
   Serial.println(Device_Name);
@@ -1358,11 +1358,11 @@ void SetDefaultVal()
   Serial.println(CH2_DeviceNo);
   if (auth_id == "" || auth_passwd == "")
   {
-    Serial.println("NO AUTH CODE!!! YOU NEED TO CONFIG SERVER AUTHENTICATION BY AT + SET_AUTH_ID AND AT + SET_AUTH_PASSWD IN DEBUG MODE!!!");
+    Serial.println("NO AUTH CODE!!! YOU NEED TO CONFIG SERVER AUTHENTICATION BY AT+SET_AUTH_ID AND AT+SET_AUTH_PASSWD IN DEBUG MODE!!!");
   }
   if (ap_ssid == "")
   {
-    Serial.println("NO WIFI SSID!!! YOU NEED TO CONFIG WIFI BY AT + SETAP_SSID AND AT + SETAP_PASSWD IN DEBUG MODE!!!");
+    Serial.println("NO WIFI SSID!!! YOU NEED TO CONFIG WIFI BY AT+SETAP_SSID AND AT+SETAP_PASSWD IN DEBUG MODE!!!");
   }
   CH1_EndDelay_W *= 10000;
   CH2_EndDelay_W *= 10000;
@@ -1703,7 +1703,7 @@ void setupAsyncServer()
       if(Update.end(true))
       {
         Serial.print("The update is finished : ");
-        Serial.println(convertFileSize(index + len));
+        Serial.println(convertFileSize(index+len));
       }
       else
       {
@@ -1881,14 +1881,14 @@ String convertFileSize(const size_t bytes)
 {
   if(bytes < 1024)
   {
-    return String(bytes) + " B";
+    return String(bytes)+" B";
   }
   else if (bytes < 1048576)
   {
-    return String(bytes/1024.0) + " kB";
+    return String(bytes/1024.0)+" kB";
   }
   else if (bytes < 1073741824)
   {
-    return String(bytes/1048576.0) + " MB";
+    return String(bytes/1048576.0)+" MB";
   }
 }
