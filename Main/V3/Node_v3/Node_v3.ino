@@ -1555,6 +1555,18 @@ String processor(const String& var)
   {
     return String(CH1_EndDelay_D);
   }
+  if(var == "Amps_TRMS1")
+  {
+    return String(Amps_TRMS1);
+  }
+  if(var == "WaterSensorData1")
+  {
+    return String(WaterSensorData1);
+  }
+  if(var == "l_hour1")
+  {
+    return String(l_hour1);
+  }
   //=======================================CH2
   if(var == "CH2_DeviceNo")
   {
@@ -1583,6 +1595,18 @@ String processor(const String& var)
   if(var == "CH2_EndDelay_D")
   {
     return String(CH2_EndDelay_D);
+  }
+  if(var == "Amps_TRMS2")
+  {
+    return String(Amps_TRMS2);
+  }
+  if(var == "WaterSensorData2")
+  {
+    return String(WaterSensorData2);
+  }
+  if(var == "l_hour2")
+  {
+    return String(l_hour2);
   }
   return String();
 }

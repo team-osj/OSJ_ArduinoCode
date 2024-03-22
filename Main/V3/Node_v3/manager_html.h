@@ -156,6 +156,12 @@ const char manager_html[] PROGMEM = R"rawliteral(
                 <td></td>
               </tr>
               <tr>
+                <th scope="col">Curr, Water, Flow</th>
+                <td>%Amps_TRMS1%</td>
+                <td>%WaterSensorData1%</td>
+                <td>%l_hour1%</td>
+              </tr>
+              <tr>
                 <th scope="col">CH2</th>
                 <td>%CH2_DeviceNo%</td>
                 <th>Enable</th>
@@ -171,6 +177,12 @@ const char manager_html[] PROGMEM = R"rawliteral(
                 <td>%CH2_EndDelay_W%</td>
                 <td>%CH2_EndDelay_D%</td>
                 <td></td>
+              </tr>
+              <tr>
+                <th scope="col">Curr, Water, Flow</th>
+                <td>%Amps_TRMS2%</td>
+                <td>%WaterSensorData2%</td>
+                <td>%l_hour2%</td>
               </tr>
               <tr>
                 <th scope="col">Flash Size</th>
