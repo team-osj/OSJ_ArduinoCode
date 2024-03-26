@@ -1533,11 +1533,21 @@ String processor(const String& var)
   }
   if(var == "CH1_Live")
   {
-    return String(CH1_Live);
+    if(CH1_Live){
+      return "Yes";
+    }
+    else{
+      return "NO";
+    }
   }
   if(var == "CH1_Mode")
   {
-    return String(CH1_Mode);
+    if(CH1_Mode){
+      return "Wash";
+    }
+    else{
+      return "Dry";
+    }
   }
   if(var == "CH1_Curr_W")
   {
@@ -1578,11 +1588,21 @@ String processor(const String& var)
   }
   if(var == "CH2_Live")
   {
-    return String(CH2_Live);
+    if(CH2_Live){
+      return "Yes";
+    }
+    else{
+      return "NO";
+    }
   }
   if(var == "CH2_Mode")
   {
-    return String(CH2_Mode);
+    if(CH2_Mode){
+      return "Wash";
+    }
+    else{
+      return "Dry";
+    }
   }
   if(var == "CH2_Curr_W")
   {
