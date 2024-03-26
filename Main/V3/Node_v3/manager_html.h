@@ -143,6 +143,13 @@ const char manager_html[] PROGMEM = R"rawliteral(
                 <td>%CH1_DeviceNo%</td>
                 <th>Enable</th>
                 <td>%CH1_Live%</td>
+              </tr>
+              <tr>
+                <th scope="col">Mode</th>
+                <td>%CH1_Mode%</td>
+                <th></th>
+                <td></td>
+              </tr>
               <tr>
                 <th scope="col">C_W, Flow, C_D</th>
                 <td>%CH1_Curr_W%</td>
@@ -166,6 +173,13 @@ const char manager_html[] PROGMEM = R"rawliteral(
                 <td>%CH2_DeviceNo%</td>
                 <th>Enable</th>
                 <td>%CH2_Live%</td>
+              </tr>
+              <tr>
+                <th scope="col">Mode</th>
+                <td>%CH2_Mode%</td>
+                <th></th>
+                <td></td>
+              </tr>
               <tr>
                 <th scope="col">C_W, Flow, C_D</th>
                 <td>%CH2_Curr_W%</td>

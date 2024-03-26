@@ -1535,6 +1535,10 @@ String processor(const String& var)
   {
     return String(CH1_Live);
   }
+  if(var == "CH1_Mode")
+  {
+    return String(CH1_Mode);
+  }
   if(var == "CH1_Curr_W")
   {
     return String(CH1_Curr_W);
@@ -1575,6 +1579,10 @@ String processor(const String& var)
   if(var == "CH2_Live")
   {
     return String(CH2_Live);
+  }
+  if(var == "CH2_Mode")
+  {
+    return String(CH2_Mode);
   }
   if(var == "CH2_Curr_W")
   {
