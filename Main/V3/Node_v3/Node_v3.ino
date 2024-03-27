@@ -10,6 +10,17 @@
 #include "ServerInfo.h"
 #include "EmonLib.h"
 
+#include <ESPAsyncWebServer.h>
+#include <AsyncTCP.h>
+#include "FS.h"
+#include <ESPmDNS.h>
+#include <Update.h>
+#include "manager_html.h"
+#include "ok_html.h"
+#include "time.h"
+
+#define ARDUINOJSON_ENABLE_ARDUINO_STRING 1
+
 //GPIO Define
 #define PIN_STATUS 17
 #define PIN_CH1_LED 18
@@ -30,7 +41,15 @@ Preferences preferences;
 WebSocketsClient webSocket;
 StaticJsonDocument<200> doc;
 
+AsyncWebServer server(80);
+WiFiClient client;
+DynamicJsonDocument jsonBuffer(2048);
+
 // ============================================== millis()&if()
+bool rebooting = false;
+
+bool wifi_enable = true;
+bool wifi_retry = true;
 
 unsigned long printPeriod = 500;
 unsigned long previousMillis = 0;
@@ -40,6 +59,7 @@ unsigned long echoPeriod1 = 200;
 unsigned long echoPeriod2 = 200;
 unsigned long led_millis_prev;
 unsigned long curr_millis;
+unsigned long server_retry_millis;
 
 int m1 = 0, m2 = 0;
 
@@ -128,6 +148,18 @@ void WiFiGotIP(WiFiEvent_t event, WiFiEventInfo_t info)
 {
   Serial.print("WiFi connected ");
   Serial.println(WiFi.localIP());
+  webSocket.disconnect();
+  server_retry_millis = curr_millis;
+  String ip = WiFi.localIP().toString();
+  webSocket.beginSSL(Server_domain, Server_port, Server_url);
+  char HeaderData[35];
+  sprintf(HeaderData, "HWID: %s\r\nCH1: %s\r\nCH2: %s", serial_no.c_str(), CH1_DeviceNo.c_str(), CH2_DeviceNo.c_str());
+  webSocket.setExtraHeaders(HeaderData);
+  webSocket.setAuthorization(auth_id.c_str(), auth_passwd.c_str());
+  webSocket.onEvent(webSocketEvent);
+  MDNS.begin(Device_Name);
+  Serial.printf("Host: http://%s.local/\n",Device_Name);
+  setupAsyncServer();
 }
 
 void WiFiStationDisconnected(WiFiEvent_t event, WiFiEventInfo_t info)
@@ -421,21 +453,34 @@ void setup()
 
 void loop()
 {
-  if (wifi_fail == 1)
+  curr_millis = millis();
+  if(rebooting)
+  {
+    delay(100);
+    ESP.restart();
+  }
+  // if (wifi_fail == 1)
+  // {
+  //   if(curr_millis - 200 >= server_retry_millis)
+  //   {
+  //     webSocket.disconnect();
+  //     server_retry_millis = curr_millis;
+  //     String ip = WiFi.localIP().toString();
+  //     webSocket.beginSSL(Server_domain, Server_port, Server_url);
+  //     char HeaderData[35];
+  //     sprintf(HeaderData, "HWID: %s\r\nCH1: %s\r\nCH2: %s", serial_no.c_str(), CH1_DeviceNo.c_str(), CH2_DeviceNo.c_str());
+  //     webSocket.setExtraHeaders(HeaderData);
+  //     webSocket.setAuthorization(auth_id.c_str(), auth_passwd.c_str());
+  //     webSocket.onEvent(webSocketEvent);
+  //     MDNS.begin(Device_Name);
+  //     Serial.printf("Host: http://%s.local/\n",Device_Name);
+  //     setupAsyncServer();
+  //   }
+  // }
+  if (WiFi.status() == WL_CONNECTED)
   {
     digitalWrite(PIN_STATUS, HIGH);
     wifi_fail = 0;
-    String ip = WiFi.localIP().toString();
-    webSocket.beginSSL(Server_domain, Server_port, Server_url);
-    char HeaderData[35];
-    sprintf(HeaderData, "HWID: %s\r\nCH1: %s\r\nCH2: %s", serial_no.c_str(), CH1_DeviceNo.c_str(), CH2_DeviceNo.c_str());
-    webSocket.setExtraHeaders(HeaderData);
-    webSocket.setAuthorization(auth_id.c_str(), auth_passwd.c_str());
-    webSocket.onEvent(webSocketEvent);
-  }
-  curr_millis = millis();
-  if (WiFi.status() == WL_CONNECTED)
-  {
     webSocket.loop();
   }
   else
@@ -463,12 +508,12 @@ void loop()
       WaterSensorData1 = digitalRead(PIN_DRAIN1);
       WaterSensorData2 = digitalRead(PIN_DRAIN2);
 
-      l_hour1 = (flow_frequency1 * 60 / 7.5); // L/hour계산
-      l_hour2 = (flow_frequency2 * 60 / 7.5);
+      l_hour1 = (flow_frequency1 * 60/7.5); // L/hour계산
+      l_hour2 = (flow_frequency2 * 60/7.5);
 
       flow_frequency1 = 0; // 변수 초기화
       flow_frequency2 = 0;
-      Serial.print("CT1 : ");
+      /*Serial.print("CT1 : ");
       Serial.println(Amps_TRMS1, 3);
       Serial.print("Water1 : ");
       Serial.println(WaterSensorData1);
@@ -482,7 +527,7 @@ void loop()
       Serial.println(l_hour2);
       Serial.print("Time : ");
       Serial.println(millis());
-      Serial.println();
+      Serial.println();*/
     }
 
     if (CH1_Mode)
@@ -530,7 +575,7 @@ void loop()
       dex = SerialData.indexOf('+');
       dex1 = SerialData.indexOf('"');
       end = SerialData.length();
-      String AT_Command = SerialData.substring(dex + 1, dex1);
+      String AT_Command = SerialData.substring(dex+1, dex1);
       if (!(AT_Command.compareTo("HELP")))
       {
       }
@@ -567,27 +612,27 @@ void loop()
       else if (!(AT_Command.compareTo("SETAP_SSID")))
       {
         Serial.println("AT+OK SETAP_SSID");
-        putString("ap_ssid", SerialData.substring(dex1 + 1, end - 1));
+        putString("ap_ssid", SerialData.substring(dex1+1, end - 1));
       }
       else if (!(AT_Command.compareTo("SETAP_PASSWD")))
       {
         Serial.println("AT+OK SETAP_PASSWD");
-        putString("ap_passwd", SerialData.substring(dex1 + 1, end - 1));
+        putString("ap_passwd", SerialData.substring(dex1+1, end - 1));
       }
       else if (!(AT_Command.compareTo("SET_SERIALNO")))
       {
         Serial.println("AT+OK SET_SERIALNO");
-        putString("serial_no", SerialData.substring(dex1 + 1, end - 1));
+        putString("serial_no", SerialData.substring(dex1+1, end - 1));
       }
       else if (!(AT_Command.compareTo("SET_AUTH_ID")))
       {
         Serial.println("AT+OK SET_AUTH_ID");
-        putString("AUTH_ID", SerialData.substring(dex1 + 1, end - 1));
+        putString("AUTH_ID", SerialData.substring(dex1+1, end - 1));
       }
       else if (!(AT_Command.compareTo("SET_AUTH_PASSWD")))
       {
         Serial.println("AT+OK SET_AUTH_PASSWD");
-        putString("AUTH_PASSWD", SerialData.substring(dex1 + 1, end - 1));
+        putString("AUTH_PASSWD", SerialData.substring(dex1+1, end - 1));
       }
       else if (!(AT_Command.compareTo("FORMAT_NVS")))
       {
@@ -614,7 +659,7 @@ void loop()
       }
       else
       {
-        Serial.println("ERROR:Unknown command");
+        Serial.println("ERROR: Unknown command");
       }
     }
   }
@@ -623,8 +668,8 @@ void loop()
 int CH1_SETVAR(String SerialData, int dex1, int dexc, int end)
 {
   dexc = SerialData.indexOf(',');
-  String command = SerialData.substring(dex1 + 1, dexc);
-  String Number = SerialData.substring(dexc + 1, end - 1);
+  String command = SerialData.substring(dex1+1, dexc);
+  String Number = SerialData.substring(dexc+1, end - 1);
   if (command == "DeviceNo")
   {
     Serial.print("CH1_DeviceNo : ");
@@ -684,8 +729,8 @@ int CH1_SETVAR(String SerialData, int dex1, int dexc, int end)
 int CH2_SETVAR(String SerialData, int dex1, int dexc, int end)
 {
   dexc = SerialData.indexOf(',');
-  String command = SerialData.substring(dex1 + 1, dexc);
-  String Number = SerialData.substring(dexc + 1, end - 1);
+  String command = SerialData.substring(dex1+1, dexc);
+  String Number = SerialData.substring(dexc+1, end - 1);
   if (command == "DeviceNo")
   {
     Serial.print("CH2_DeviceNo : ");
@@ -749,9 +794,9 @@ int NOWSTATE()
 }
 
 /*int dryer_prev_millis1 = 0;
-  int dryer_prev_millis2 = 0;
-  int dryer_cnt1 = 0;
-  int dryer_cnt2 = 0;*/
+int dryer_prev_millis2 = 0;
+int dryer_cnt1 = 0;
+int dryer_cnt2 = 0;*/
 int json_log_flag1 = 0;
 int json_log_flag2 = 0;
 int json_log_flag1_c = 0;
@@ -771,20 +816,20 @@ DynamicJsonDocument json_log2(1024);
 void Dryer_Status_Judgment(float Amps_TRMS, int cnt, int m, unsigned long previousMillis_end, int ChannelNum)
 {
   /*if (ChannelNum == 1 && Amps_TRMS > CH1_Curr_D && dryer_cnt1 == 0){ //전류가 흐르면 millis시작
-    dryer_cnt1 = 1;
-    dryer_prev_millis1 = millis();
-    }
-    if (ChannelNum == 1 && Amps_TRMS < CH1_Curr_D && dryer_cnt1 == 1){ //전류가 끊기면 cnt로 시작 취소
-    dryer_cnt1 = 0;
-    }
+  dryer_cnt1 = 1;
+  dryer_prev_millis1 = millis();
+  }
+  if (ChannelNum == 1 && Amps_TRMS < CH1_Curr_D && dryer_cnt1 == 1){ //전류가 끊기면 cnt로 시작 취소
+  dryer_cnt1 = 0;
+  }
 
-    if (ChannelNum == 2 && Amps_TRMS > CH2_Curr_D && dryer_cnt2 == 0){
-    dryer_cnt2 = 1;
-    dryer_prev_millis2 = millis();
-    }
-    if (ChannelNum == 2 && Amps_TRMS < CH2_Curr_D && dryer_cnt2 == 1){
-    dryer_cnt2 = 0;
-    }*/
+  if (ChannelNum == 2 && Amps_TRMS > CH2_Curr_D && dryer_cnt2 == 0){
+  dryer_cnt2 = 1;
+  dryer_prev_millis2 = millis();
+  }
+  if (ChannelNum == 2 && Amps_TRMS < CH2_Curr_D && dryer_cnt2 == 1){
+  dryer_cnt2 = 0;
+  }*/
   if (ChannelNum == 1 && Amps_TRMS < CH1_Curr_D && json_log_flag1) {
     if (json_log_flag1_c == 1) {
       json_log_flag1_c = 0;
@@ -793,11 +838,11 @@ void Dryer_Status_Judgment(float Amps_TRMS, int cnt, int m, unsigned long previo
       json_log1[json_log_cnt1_string]["n"] = "C";
       json_log1[json_log_cnt1_string]["s"] = 0;
       if (json_log_cnt1 % 100 == 0) {
-          String json_log_data1 = "";
-          serializeJson(json_log1, json_log_data1);
-          json_log1.clear();
-          SendLog(1, json_log_data1);
-        }
+        String json_log_data1 = "";
+        serializeJson(json_log1, json_log_data1);
+        json_log1.clear();
+        SendLog(1, json_log_data1);
+      }
       json_log_cnt1++;
     }
   }
@@ -809,11 +854,11 @@ void Dryer_Status_Judgment(float Amps_TRMS, int cnt, int m, unsigned long previo
       json_log2[json_log_cnt2_string]["n"] = "C";
       json_log2[json_log_cnt2_string]["s"] = 0;
       if (json_log_cnt2 % 100 == 0) {
-          String json_log_data2 = "";
-          serializeJson(json_log2, json_log_data2);
-          json_log2.clear();
-          SendLog(2, json_log_data2);
-        }
+        String json_log_data2 = "";
+        serializeJson(json_log2, json_log_data2);
+        json_log2.clear();
+        SendLog(2, json_log_data2);
+      }
       json_log_cnt2++;
     }
   }
@@ -876,7 +921,7 @@ void Dryer_Status_Judgment(float Amps_TRMS, int cnt, int m, unsigned long previo
     if (cnt == 1) // CH2 건조기 동작 시작
     {
       timeSendFlag2 = 1;
-      
+
       json_log_flag2 = 1;
       json_log_cnt2 = 1;
       json_log_millis2 = millis();
@@ -915,14 +960,14 @@ void Dryer_Status_Judgment(float Amps_TRMS, int cnt, int m, unsigned long previo
     else if (ChannelNum == 1 && millis() - previousMillis_end >= CH1_EndDelay_D) // CH1 건조기 동작 종료
     {
       timeSendFlag1 = 1;
-      
+
       json_log_flag1_c = 0;
       json_log_flag1 = 0;
 
 
       String local_time = "";
       json_log1["END"]["local_time"] = local_time;
-      
+
       String json_log_data1 = "";
       serializeJson(json_log1, json_log_data1);
       //Serial.println(json_log_data1);
@@ -937,14 +982,14 @@ void Dryer_Status_Judgment(float Amps_TRMS, int cnt, int m, unsigned long previo
     else if (ChannelNum == 2 && millis() - previousMillis_end >= CH2_EndDelay_D) // CH2 건조기 동작 종료
     {
       timeSendFlag2 = 1;
-      
+
       json_log_flag2_c = 0;
       json_log_flag2 = 0;
 
 
       String local_time = "";
       json_log2["END"]["local_time"] = local_time;
-      
+
       String json_log_data2 = "";
       serializeJson(json_log2, json_log_data2);
       //Serial.println(json_log_data2);
@@ -1170,7 +1215,7 @@ void Status_Judgment(float Amps_TRMS, int WaterSensorData, unsigned int l_hour, 
     if (cnt == 1) // CH1 세탁기 동작 시작
     {
       timeSendFlag1 = 1;
-      
+
       json_log_flag1 = 1;
       json_log_cnt1 = 1;
       json_log_millis1 = millis();
@@ -1194,7 +1239,7 @@ void Status_Judgment(float Amps_TRMS, int WaterSensorData, unsigned int l_hour, 
     if (cnt == 1) // CH2 세탁기 동작 시작
     {
       timeSendFlag2 = 1;
-      
+
       json_log_flag2 = 1;
       json_log_cnt2 = 1;
       json_log_millis2 = millis();
@@ -1233,14 +1278,14 @@ void Status_Judgment(float Amps_TRMS, int WaterSensorData, unsigned int l_hour, 
     else if (ChannelNum == 1 && millis() - previousMillis_end >= CH1_EndDelay_W) // CH1 세탁기 동작 종료
     {
       timeSendFlag1 = 1;
-      
+
       json_log_flag1_c = 0;
       json_log_flag1_f = 0;
       json_log_flag1_w = 0;
       json_log_flag1 = 0;
       String local_time = "";
       json_log1["END"]["local_time"] = local_time;
-      
+
       String json_log_data1 = "";
       serializeJson(json_log1, json_log_data1);
       //Serial.println(json_log_data1);
@@ -1255,14 +1300,14 @@ void Status_Judgment(float Amps_TRMS, int WaterSensorData, unsigned int l_hour, 
     else if (ChannelNum == 2 && millis() - previousMillis_end >= CH2_EndDelay_W) // CH2 세탁기 동작 종료
     {
       timeSendFlag2 = 1;
-      
+
       json_log_flag2_c = 0;
       json_log_flag2_f = 0;
       json_log_flag2_w = 0;
       json_log_flag2 = 0;
       String local_time = "";
       json_log2["END"]["local_time"] = local_time;
-      
+
       String json_log_data2 = "";
       serializeJson(json_log2, json_log_data2);
       //Serial.println(json_log_data2);
@@ -1303,9 +1348,9 @@ void SetDefaultVal()
   CH1_Live = preferences.getBool("CH1_Live", true);
   CH2_Live = preferences.getBool("CH2_Live", true);
 
-  Device_Name = Device_Name + serial_no;
+  Device_Name = Device_Name+serial_no;
   WiFi.setHostname(Device_Name.c_str());
-  Serial.print("My Name Is :");
+  Serial.print("My Name Is : ");
   Serial.println(Device_Name);
   Serial.print("CH1 : ");
   Serial.print(CH1_DeviceNo);
@@ -1364,7 +1409,7 @@ void NETWORK_INFO()
     Serial.print("RSSI = ");
     Serial.println(WiFi.RSSI());
     String ip = WiFi.localIP().toString();
-    Serial.printf("Local IP = %s\r\n", ip.c_str());
+    Serial.printf("Local IP = % s\r\n", ip.c_str());
   }
   Serial.print("MAC = ");
   Serial.println(WiFi.macAddress());
@@ -1372,4 +1417,506 @@ void NETWORK_INFO()
   Serial.println(ap_ssid);
   Serial.print("PASSWORD = ");
   Serial.print(ap_passwd);
+}
+
+// ===========================================================OTA
+
+String reset_reason(int reason)
+{
+  switch (reason)
+  {
+    case 1 : return "POWERON_RESET";      /**<1,  Vbat power on reset*/
+    case 3 : return "SW_RESET";              /**<3,  Software reset digital core*/
+    case 4 : return "OWDT_RESET";            /**<4,  Legacy watch dog reset digital core*/
+    case 5 : return "DEEPSLEEP_RESET";        /**<5,  Deep Sleep reset digital core*/
+    case 6 : return "SDIO_RESET";             /**<6,  Reset by SLC module, reset digital core*/
+    case 7 : return "TG0WDT_SYS_RESET";       /**<7,  Timer Group0 Watch dog reset digital core*/
+    case 8 : return "TG1WDT_SYS_RESET";       /**<8,  Timer Group1 Watch dog reset digital core*/
+    case 9 : return "RTCWDT_SYS_RESET";       /**<9,  RTC Watch dog Reset digital core*/
+    case 10 : return "INTRUSION_RESET";       /**<10, Instrusion tested to reset CPU*/
+    case 11 : return "TGWDT_CPU_RESET";       /**<11, Time Group reset CPU*/
+    case 12 : return "SW_CPU_RESET";          /**<12, Software reset CPU*/
+    case 13 : return "RTCWDT_CPU_RESET";      /**<13, RTC Watch dog Reset CPU*/
+    case 14 : return "EXT_CPU_RESET";         /**<14, for APP CPU, reseted by PRO CPU*/
+    case 15 : return "RTCWDT_BROWN_OUT_RESET";/**<15, Reset when the vdd voltage is not stable*/
+    case 16 : return "RTCWDT_RTC_RESET";      /**<16, RTC Watch dog reset digital core and rtc module*/
+    default : return "NO_MEAN";
+  }
+}
+
+void printLocalTime() {
+  struct tm timeinfo;
+  if(!getLocalTime(&timeinfo)){
+    Serial.println("Failed to obtain time");
+    return;
+  }
+  Serial.println(&timeinfo, " % A, % B % d % Y % H : % M : % S");
+}
+
+String processor(const String& var)
+{
+  if(var == "DEVICE_NAME")
+  {
+    return Device_Name;
+  }
+  if(var == "SSID")
+  {
+    return ap_ssid;
+  }
+  if(var == "PASS")
+  {
+    return ap_passwd;
+  }
+  if(var == "RSSI")
+  {
+    return String(WiFi.RSSI());
+  }
+  if(var == "WIFI_QUALITY")
+  {
+    if (WiFi.status() != WL_CONNECTED)
+    {
+      return "WiFi Not Connected";
+    }
+    int rssi = WiFi.RSSI();
+    if(rssi > -40)
+    {
+      return "Very Good";
+    }
+    else if(rssi > -60)
+    {
+      return "Good";
+    }
+    else if(rssi > -70)
+    {
+      return "Weak";
+    }
+    else
+    {
+      return "Poor";
+    }
+  }
+  if(var == "IP")
+  {
+    return WiFi.localIP().toString();
+  }
+  if(var == "MAC")
+  {
+    return WiFi.macAddress();
+  }
+  if(var == "TCP_STATUS")
+  {
+    if(client.connected())
+    {
+      return "Connected";
+    }
+    else
+    {
+      return "Disconnected";
+    }
+  }
+  if(var == "FlashSize")
+  {
+    return String(ESP.getFlashChipSize()/1024);
+  }
+  if(var == "Heap")
+  {
+    return String(ESP.getFreeHeap()/1024);
+  }
+  if(var == "BUILD_VER")
+  {
+    return build_date;
+  }
+  //=======================================CH1
+  if(var == "CH1_DeviceNo")
+  {
+    return CH1_DeviceNo;
+  }
+  if(var == "CH1_Live")
+  {
+    if(CH1_Live){
+      return "Yes";
+    }
+    else{
+      return "NO";
+    }
+  }
+  if(var == "CH1_Mode")
+  {
+    if(CH1_Mode){
+      return "Wash";
+    }
+    else{
+      return "Dry";
+    }
+  }
+  if(var == "CH1_Curr_W")
+  {
+    return String(CH1_Curr_W);
+  }
+  if(var == "CH1_Flow_W")
+  {
+    return String(CH1_Flow_W);
+  }
+  if(var == "CH1_Curr_D")
+  {
+    return String(CH1_Curr_D);
+  }
+  if(var == "CH1_EndDelay_W")
+  {
+    return String(CH1_EndDelay_W);
+  }
+  if(var == "CH1_EndDelay_D")
+  {
+    return String(CH1_EndDelay_D);
+  }
+  if(var == "Amps_TRMS1")
+  {
+    return String(Amps_TRMS1);
+  }
+  if(var == "WaterSensorData1")
+  {
+    return String(WaterSensorData1);
+  }
+  if(var == "l_hour1")
+  {
+    return String(l_hour1);
+  }
+  //=======================================CH2
+  if(var == "CH2_DeviceNo")
+  {
+    return CH2_DeviceNo;
+  }
+  if(var == "CH2_Live")
+  {
+    if(CH2_Live){
+      return "Yes";
+    }
+    else{
+      return "NO";
+    }
+  }
+  if(var == "CH2_Mode")
+  {
+    if(CH2_Mode){
+      return "Wash";
+    }
+    else{
+      return "Dry";
+    }
+  }
+  if(var == "CH2_Curr_W")
+  {
+    return String(CH2_Curr_W);
+  }
+  if(var == "CH2_Flow_W")
+  {
+    return String(CH2_Flow_W);
+  }
+  if(var == "CH2_Curr_D")
+  {
+    return String(CH2_Curr_D);
+  }
+  if(var == "CH2_EndDelay_W")
+  {
+    return String(CH2_EndDelay_W);
+  }
+  if(var == "CH2_EndDelay_D")
+  {
+    return String(CH2_EndDelay_D);
+  }
+  if(var == "Amps_TRMS2")
+  {
+    return String(Amps_TRMS2);
+  }
+  if(var == "WaterSensorData2")
+  {
+    return String(WaterSensorData2);
+  }
+  if(var == "l_hour2")
+  {
+    return String(l_hour2);
+  }
+  return String();
+}
+
+void setupAsyncServer()
+{
+  server.on("/", HTTP_GET, [](AsyncWebServerRequest *request)
+  {
+    if(!request->authenticate(auth_id.c_str(), auth_passwd.c_str()))
+    {
+      return request->requestAuthentication();
+    }
+    request->send_P(200, "text/html", manager_html, processor);
+  });
+
+
+  server.on("/wifi", HTTP_POST, [](AsyncWebServerRequest *request) {
+    int params = request->params();
+    for(int i=0;i<params;i++){
+      AsyncWebParameter* p = request->getParam(i);
+      if(p->isPost()){
+        if (p->name() == "WiFi_SSID") {
+          String ssid = p->value().c_str();
+          Serial.print("SSID set to : ");
+          Serial.println(ssid);
+          jsonBuffer["ssid"] = ssid;
+        }
+        if (p->name() == "WiFi_PASS") {
+          String pass = p->value().c_str();
+          Serial.print("Password set to : ");
+          Serial.println(pass);
+          jsonBuffer["pass"] = pass;
+        }
+      }
+    }
+    request->redirect("/");
+  });
+
+  server.on("/auth", HTTP_POST, [](AsyncWebServerRequest *request) {
+    int params = request->params();
+    for(int i=0;i<params;i++){
+      AsyncWebParameter* p = request->getParam(i);
+      if(p->isPost()){
+        if (p->name() == "AUTH_ID") {
+          auth_id = p->value().c_str();
+          Serial.print("AUTH_ID : ");
+          Serial.println(auth_id);
+          if(auth_id != ""){
+            putString("AUTH_ID", auth_id);
+          }
+        }
+        if (p->name() == "AUTH_PASSWD") {
+          auth_passwd = p->value().c_str();
+          Serial.print("AUTH_PASSWD : ");
+          Serial.println(auth_passwd);
+          if(auth_passwd != ""){
+            putString("AUTH_PASSWD", auth_passwd);
+          }
+        }
+      }
+    }
+    request->redirect("/");
+  });
+
+  server.on("/update", HTTP_POST, [](AsyncWebServerRequest *request)
+  {
+    rebooting = !Update.hasError();
+    AsyncWebServerResponse *response = request->beginResponse(200, "text/html", rebooting ? ok_html : failed_html);
+
+    response->addHeader("Connection", "close");
+    request->send(response);
+  },
+  [](AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final)
+  {
+    if(!index)
+    {
+      Serial.print("Updating : ");
+      Serial.println(filename.c_str());
+
+      if(!Update.begin((ESP.getFreeSketchSpace() - 0x1000) & 0xFFFFF000))
+      {
+        Update.printError(Serial);
+      }
+    }
+    if(!Update.hasError())
+    {
+      if(Update.write(data, len) != len)
+      {
+        Update.printError(Serial);
+      }
+    }
+    if(final)
+    {
+      if(Update.end(true))
+      {
+        Serial.print("The update is finished : ");
+        Serial.println(convertFileSize(index+len));
+      }
+      else
+      {
+        Update.printError(Serial);
+      }
+    }
+  });
+  
+  server.on("/CH1", HTTP_POST, [](AsyncWebServerRequest *request) {
+    String Command;
+    String Value;
+    int params = request->params();
+    for(int i=0;i<params;i++){
+      AsyncWebParameter* p = request->getParam(i);
+      if(p->isPost()){
+        if (p->name() == "CH1") {
+          Command = p->value().c_str();
+          Serial.print("CH1_Commend : ");
+          Serial.println(Command);
+        }
+        if (p->name() == "value") {
+          Value = p->value().c_str();
+          Serial.print("CH1_Value : ");
+          Serial.println(Value);
+          if(Value != ""){
+            if (Command == "DeviceNo")
+            {
+              Serial.print("CH1_DeviceNo : ");
+              Serial.println(Value);
+              preferences.putString("CH1_DeviceNo", Value);
+            }
+            else if (Command == "Current_Wash")
+            {
+              Serial.print("CH1_Curr_W : ");
+              Serial.println(Value);
+              float var = Value.toFloat();
+              preferences.putFloat("CH1_Curr_W", var);
+            }
+            else if (Command == "Flow_Wash")
+            {
+              Serial.print("CH1_Flow_W : ");
+              Serial.println(Value);
+              int var = Value.toInt();
+              preferences.putUInt("CH1_Flow_W", var);
+            }
+            else if (Command == "Current_Dry")
+            {
+              Serial.print("CH1_Curr_D : ");
+              Serial.println(Value);
+              float var = Value.toFloat();
+              preferences.putFloat("CH1_Curr_D", var);
+            }
+            else if (Command == "EndDelay_Wash")
+            {
+              Serial.print("CH1_EndDelay_W : ");
+              Serial.println(Value);
+              int var = Value.toInt();
+              preferences.putUInt("CH1_EndDelay_W", var);
+            }
+            else if (Command == "EndDelay_Dry")
+            {
+              Serial.print("CH1_EndDelay_D : ");
+              Serial.println(Value);
+              int var = Value.toInt();
+              preferences.putUInt("CH1_EndDelay_D", var);
+            }
+            else if (Command == "Enable")
+            {
+              Serial.print("CH1_Enable : ");
+              Serial.println(Value);
+              int var = Value.toInt();
+              preferences.putBool("CH1_Live", var);
+            }
+          }
+        }
+      }
+    }
+    request->redirect("/");
+  });
+  
+  server.on("/CH2", HTTP_POST, [](AsyncWebServerRequest *request) {
+    String Command;
+    String Value;
+    int params = request->params();
+    for(int i=0;i<params;i++){
+      AsyncWebParameter* p = request->getParam(i);
+      if(p->isPost()){
+        if (p->name() == "CH2") {
+          Command = p->value().c_str();
+          Serial.print("CH2_Commend : ");
+          Serial.println(Command);
+        }
+        if (p->name() == "value") {
+          Value = p->value().c_str();
+          Serial.print("CH2_Value : ");
+          Serial.println(Value);
+          if(Value != ""){
+            if (Command == "DeviceNo")
+            {
+              Serial.print("CH2_DeviceNo : ");
+              Serial.println(Value);
+              preferences.putString("CH2_DeviceNo", Value);
+            }
+            else if (Command == "Current_Wash")
+            {
+              Serial.print("CH2_Curr_W : ");
+              Serial.println(Value);
+              float var = Value.toFloat();
+              preferences.putFloat("CH2_Curr_W", var);
+            }
+            else if (Command == "Flow_Wash")
+            {
+              Serial.print("CH2_Flow_W : ");
+              Serial.println(Value);
+              int var = Value.toInt();
+              preferences.putUInt("CH2_Flow_W", var);
+            }
+            else if (Command == "Current_Dry")
+            {
+              Serial.print("CH2_Curr_D : ");
+              Serial.println(Value);
+              float var = Value.toFloat();
+              preferences.putFloat("CH2_Curr_D", var);
+            }
+            else if (Command == "EndDelay_Wash")
+            {
+              Serial.print("CH2_EndDelay_W : ");
+              Serial.println(Value);
+              int var = Value.toInt();
+              preferences.putUInt("CH2_EndDelay_W", var);
+            }
+            else if (Command == "EndDelay_Dry")
+            {
+              Serial.print("CH2_EndDelay_D : ");
+              Serial.println(Value);
+              int var = Value.toInt();
+              preferences.putUInt("CH2_EndDelay_D", var);
+            }
+            else if (Command == "Enable")
+            {
+              Serial.print("CH2_Enable : ");
+              Serial.println(Value);
+              int var = Value.toInt();
+              preferences.putBool("CH2_Live", var);
+            }
+          }
+        }
+      }
+    }
+    request->redirect("/");
+  });
+
+  server.on("/reboot", HTTP_GET, [](AsyncWebServerRequest *request)
+  {
+    if(!request->authenticate(auth_id.c_str(), auth_passwd.c_str()))
+    {
+      return request->requestAuthentication();
+    }
+    request->redirect("/");
+    delay(200);
+    ESP.restart();
+  });
+
+  server.onNotFound(notFound);
+
+  server.begin();
+}
+
+void notFound(AsyncWebServerRequest *request)
+{
+  request->send(404);
+}
+
+String convertFileSize(const size_t bytes)
+{
+  if(bytes < 1024)
+  {
+    return String(bytes)+" B";
+  }
+  else if (bytes < 1048576)
+  {
+    return String(bytes/1024.0)+" kB";
+  }
+  else if (bytes < 1073741824)
+  {
+    return String(bytes/1048576.0)+" MB";
+  }
 }
