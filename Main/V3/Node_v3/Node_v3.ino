@@ -145,6 +145,7 @@ void WiFiGotIP(WiFiEvent_t event, WiFiEventInfo_t info)
   webSocket.disconnect();
   server_retry_millis = curr_millis;
   String ip = WiFi.localIP().toString();
+  // 코드 진행 순서 변경 금지
   webSocket.beginSSL(Server_domain, Server_port, Server_url);
   char HeaderData[35];
   sprintf(HeaderData, "HWID: %s\r\nCH1: %s\r\nCH2: %s", serial_no.c_str(), CH1_DeviceNo.c_str(), CH2_DeviceNo.c_str());
@@ -152,6 +153,7 @@ void WiFiGotIP(WiFiEvent_t event, WiFiEventInfo_t info)
   webSocket.setAuthorization(auth_id.c_str(), auth_passwd.c_str());
   webSocket.onEvent(webSocketEvent);
   MDNS.begin(Device_Name);
+  // 코드 진행 순서 변경 금지
   Serial.printf("Host: http://%s.local/\n",Device_Name);
   setupAsyncServer();
 }
