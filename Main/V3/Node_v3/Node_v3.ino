@@ -48,15 +48,9 @@ DynamicJsonDocument jsonBuffer(2048);
 // ============================================== millis()&if()
 bool rebooting = false;
 
-bool wifi_enable = true;
-bool wifi_retry = true;
-
-unsigned long printPeriod = 500;
 unsigned long previousMillis = 0;
 unsigned long previousMillis_end1 = 0;
 unsigned long previousMillis_end2 = 0;
-unsigned long echoPeriod1 = 200;
-unsigned long echoPeriod2 = 200;
 unsigned long led_millis_prev;
 unsigned long curr_millis;
 unsigned long server_retry_millis;
@@ -500,35 +494,6 @@ void loop()
 
     if (previousMillis > millis())
       previousMillis = millis();
-
-    if (millis() - previousMillis >= printPeriod)
-    {
-      previousMillis = millis();
-
-      WaterSensorData1 = digitalRead(PIN_DRAIN1);
-      WaterSensorData2 = digitalRead(PIN_DRAIN2);
-
-      l_hour1 = (flow_frequency1 * 60/7.5); // L/hour계산
-      l_hour2 = (flow_frequency2 * 60/7.5);
-
-      flow_frequency1 = 0; // 변수 초기화
-      flow_frequency2 = 0;
-      /*Serial.print("CT1 : ");
-      Serial.println(Amps_TRMS1, 3);
-      Serial.print("Water1 : ");
-      Serial.println(WaterSensorData1);
-      Serial.print("L/h1 : ");
-      Serial.println(l_hour1);
-      Serial.print("CT2 : ");
-      Serial.println(Amps_TRMS2, 3);
-      Serial.print("Water2 : ");
-      Serial.println(WaterSensorData2);
-      Serial.print("L/h2 : ");
-      Serial.println(l_hour2);
-      Serial.print("Time : ");
-      Serial.println(millis());
-      Serial.println();*/
-    }
 
     if (CH1_Mode)
     {
