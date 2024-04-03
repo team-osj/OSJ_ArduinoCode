@@ -753,12 +753,6 @@ int CH2_SETVAR(String SerialData, int dex1, int dexc, int end)
   return 0;
 }
 
-int NOWSTATE()
-{
-  SetDefaultVal();
-  return 0;
-}
-
 /*int dryer_prev_millis1 = 0;
 int dryer_prev_millis2 = 0;
 int dryer_cnt1 = 0;
