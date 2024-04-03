@@ -43,7 +43,6 @@ StaticJsonDocument<200> doc;
 
 AsyncWebServer server(80);
 WiFiClient client;
-DynamicJsonDocument jsonBuffer(2048);
 
 // ============================================== millis()&if()
 bool rebooting = false;
@@ -1627,13 +1626,13 @@ void setupAsyncServer()
           String ssid = p->value().c_str();
           Serial.print("SSID set to : ");
           Serial.println(ssid);
-          jsonBuffer["ssid"] = ssid;
+          putString("ap_ssid", ssid);
         }
         if (p->name() == "WiFi_PASS") {
           String pass = p->value().c_str();
           Serial.print("Password set to : ");
           Serial.println(pass);
-          jsonBuffer["pass"] = pass;
+          putString("ap_passwd", pass);
         }
       }
     }
