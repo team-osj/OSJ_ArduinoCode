@@ -333,6 +333,15 @@ const char manager_html[] PROGMEM = R"rawliteral(
           <div id="spacer_20"></div>
 
           <fieldset style="width: 700px;background-color: #f7f7f7;">
+            <legend>SetDefaultVal</legend>
+            <form method="GET" action="/SetDefaultVal" enctype="multipart/form-data">
+              <input type="submit" id="submit" value="SetDefaultVal" onclick="return callSetDefaultVal()">
+            </form>
+          </fieldset>
+          
+          <div id="spacer_20"></div>
+
+          <fieldset style="width: 700px;background-color: #f7f7f7;">
             <legend>Device Reboot</legend>
             <form method="GET" action="/reboot" enctype="multipart/form-data">
               <input type="submit" id="submit" value="REBOOT" onclick="return confirmFormat()">

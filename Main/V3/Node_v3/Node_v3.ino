@@ -1855,6 +1855,17 @@ void setupAsyncServer()
     ESP.restart();
   });
 
+  server.on("/SetDefaultVal", HTTP_GET, [](AsyncWebServerRequest *request)
+  {
+    if(!request->authenticate(auth_id.c_str(), auth_passwd.c_str()))
+    {
+      return request->requestAuthentication();
+    }
+    request->redirect("/");
+    delay(200);
+    SetDefaultVal();
+  });
+  
   server.onNotFound(notFound);
 
   server.begin();
