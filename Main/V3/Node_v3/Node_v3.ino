@@ -9,15 +9,12 @@
 #include <nvs_flash.h>
 #include "ServerInfo.h"
 #include "EmonLib.h"
-
 #include <ESPAsyncWebServer.h>
 #include <AsyncTCP.h>
-// #include "FS.h"
 #include <ESPmDNS.h>
 #include <Update.h>
 #include "manager_html.h"
 #include "ok_html.h"
-#include "time.h"
 
 #define ARDUINOJSON_ENABLE_ARDUINO_STRING 1
 
@@ -36,6 +33,7 @@
 #define PIN_DRAIN2 25
 
 #define PING_LATE_MILLIS 21500
+#define sensPeriod 500
 
 EnergyMonitor ct1;
 EnergyMonitor ct2;
@@ -509,6 +507,35 @@ void loop()
 
     if (previousMillis > millis())
       previousMillis = millis();
+
+    if (millis() - previousMillis >= sensPeriod)
+    {
+      previousMillis = millis();
+
+      WaterSensorData1 = digitalRead(PIN_DRAIN1);
+      WaterSensorData2 = digitalRead(PIN_DRAIN2);
+
+      l_hour1 = (flow_frequency1 * 60/7.5); // L/hour계산
+      l_hour2 = (flow_frequency2 * 60/7.5);
+
+      flow_frequency1 = 0; // 변수 초기화
+      flow_frequency2 = 0;
+      /*Serial.print("CT1 : ");
+      Serial.println(Amps_TRMS1, 3);
+      Serial.print("Water1 : ");
+      Serial.println(WaterSensorData1);
+      Serial.print("L/h1 : ");
+      Serial.println(l_hour1);
+      Serial.print("CT2 : ");
+      Serial.println(Amps_TRMS2, 3);
+      Serial.print("Water2 : ");
+      Serial.println(WaterSensorData2);
+      Serial.print("L/h2 : ");
+      Serial.println(l_hour2);
+      Serial.print("Time : ");
+      Serial.println(millis());
+      Serial.println();*/
+    }
 
     if (CH1_Mode)
     {
@@ -1416,15 +1443,6 @@ String reset_reason(int reason)
     case 16 : return "RTCWDT_RTC_RESET";      /**<16, RTC Watch dog reset digital core and rtc module*/
     default : return "NO_MEAN";
   }
-}
-
-void printLocalTime() {
-  struct tm timeinfo;
-  if(!getLocalTime(&timeinfo)){
-    Serial.println("Failed to obtain time");
-    return;
-  }
-  Serial.println(&timeinfo, " % A, % B % d % Y % H : % M : % S");
 }
 
 String processor(const String& var)
