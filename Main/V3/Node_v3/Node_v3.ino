@@ -35,7 +35,7 @@
 #define PIN_DRAIN1 23
 #define PIN_DRAIN2 25
 
-#define PING_LATE_MILLIS 25000
+#define PING_LATE_MILLIS 21500
 
 EnergyMonitor ct1;
 EnergyMonitor ct2;
@@ -48,6 +48,7 @@ WiFiClient client;
 
 // ============================================== millis()&if()
 bool rebooting = false;
+bool ping_flag = false;
 
 unsigned long previousMillis = 0;
 unsigned long previousMillis_end1 = 0;
@@ -204,6 +205,8 @@ void webSocketEvent(WStype_t type, uint8_t *payload, size_t length)
     case WStype_CONNECTED:
       {
         Serial.printf("[WSc] Connected to url: %s\n", payload);
+        last_ping_millis = millis();
+        ping_flag = true;
         if (mode_debug)
         {
           if (CH1_Live == true)
@@ -296,7 +299,6 @@ void webSocketEvent(WStype_t type, uint8_t *payload, size_t length)
       }
       break;
     case WStype_PING:
-      Serial.println("haha");
       last_ping_millis = millis();
       break;
     case WStype_BIN:
@@ -457,8 +459,9 @@ void setup()
 void loop()
 { 
   curr_millis = millis();
-  if(last_ping_millis - curr_millis >= PING_LATE_MILLIS){
-    Serial.println("ping anom");
+  if(ping_flag == true && webSocket.isConnected() == true && curr_millis - last_ping_millis >= PING_LATE_MILLIS){
+    ping_flag = false;
+    webSocket.disconnect();
   }
   if(rebooting)
   {
