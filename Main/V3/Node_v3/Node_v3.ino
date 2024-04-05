@@ -35,6 +35,8 @@
 #define PIN_DRAIN1 23
 #define PIN_DRAIN2 25
 
+#define PING_LATE_MILLIS 25000
+
 EnergyMonitor ct1;
 EnergyMonitor ct2;
 Preferences preferences;
@@ -53,6 +55,7 @@ unsigned long previousMillis_end2 = 0;
 unsigned long led_millis_prev;
 unsigned long curr_millis;
 unsigned long server_retry_millis;
+unsigned long last_ping_millis = 0;
 
 int m1 = 0, m2 = 0;
 
@@ -294,6 +297,7 @@ void webSocketEvent(WStype_t type, uint8_t *payload, size_t length)
       break;
     case WStype_PING:
       Serial.println("haha");
+      last_ping_millis = millis();
       break;
     case WStype_BIN:
     case WStype_ERROR:
@@ -451,8 +455,11 @@ void setup()
 }
 
 void loop()
-{
+{ 
   curr_millis = millis();
+  if(last_ping_millis - curr_millis >= PING_LATE_MILLIS){
+    Serial.println("ping anom");
+  }
   if(rebooting)
   {
     delay(100);
