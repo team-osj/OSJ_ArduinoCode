@@ -12,7 +12,7 @@
 
 #include <ESPAsyncWebServer.h>
 #include <AsyncTCP.h>
-#include "FS.h"
+// #include "FS.h"
 #include <ESPmDNS.h>
 #include <Update.h>
 #include "manager_html.h"
@@ -150,6 +150,7 @@ void WiFiGotIP(WiFiEvent_t event, WiFiEventInfo_t info)
   sprintf(HeaderData, "HWID: %s\r\nCH1: %s\r\nCH2: %s", serial_no.c_str(), CH1_DeviceNo.c_str(), CH2_DeviceNo.c_str());
   webSocket.setExtraHeaders(HeaderData);
   webSocket.setAuthorization(auth_id.c_str(), auth_passwd.c_str());
+  //webSocket.enableHeartbeat();
   webSocket.onEvent(webSocketEvent);
   MDNS.begin(Device_Name);
   // 코드 진행 순서 변경 금지
@@ -290,6 +291,9 @@ void webSocketEvent(WStype_t type, uint8_t *payload, size_t length)
           webSocket.sendTXT(MyStatus_String);
         }
       }
+      break;
+    case WStype_PING:
+      Serial.println("haha");
       break;
     case WStype_BIN:
     case WStype_ERROR:
@@ -474,9 +478,9 @@ void loop()
   // }
   if (WiFi.status() == WL_CONNECTED)
   {
+    webSocket.loop();
     digitalWrite(PIN_STATUS, HIGH);
     wifi_fail = 0;
-    webSocket.loop();
   }
   else
   {

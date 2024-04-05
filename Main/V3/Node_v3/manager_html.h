@@ -333,9 +333,9 @@ const char manager_html[] PROGMEM = R"rawliteral(
           <div id="spacer_20"></div>
 
           <fieldset style="width: 700px;background-color: #f7f7f7;">
-            <legend>SetDefaultVal</legend>
+            <legend>Load Variable From NVS</legend>
             <form method="GET" action="/SetDefaultVal" enctype="multipart/form-data">
-              <input type="submit" id="submit" value="SetDefaultVal" onclick="return callSetDefaultVal()">
+              <input type="submit" id="submit" value="LOAD" onclick="return callSetDefaultVal()">
             </form>
           </fieldset>
           
