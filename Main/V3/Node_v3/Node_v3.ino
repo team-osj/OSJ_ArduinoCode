@@ -88,7 +88,8 @@ int CH2_Cnt = 1;
 bool CH1_Live = true;
 bool CH2_Live = true;
 
-String Device_Name = "OSJ_";
+String Default_Device_Name = "OSJ_";
+String Device_Name;
 String ap_ssid;
 String ap_passwd;
 String serial_no;
@@ -1349,7 +1350,7 @@ void SetDefaultVal()
   CH1_Live = preferences.getBool("CH1_Live", true);
   CH2_Live = preferences.getBool("CH2_Live", true);
 
-  Device_Name = Device_Name+serial_no;
+  Device_Name = Default_Device_Name+serial_no;
   WiFi.setHostname(Device_Name.c_str());
   Serial.print("My Name Is : ");
   Serial.println(Device_Name);
