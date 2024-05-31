@@ -97,6 +97,8 @@ String auth_id;
 String auth_passwd;
 String CH1_DeviceNo;
 String CH2_DeviceNo;
+String RoomNo = "0";
+
 
 bool wifi_fail = 1;
 
@@ -150,7 +152,7 @@ void WiFiGotIP(WiFiEvent_t event, WiFiEventInfo_t info)
   // 코드 진행 순서 변경 금지
   webSocket.beginSSL(Server_domain, Server_port, Server_url);
   char HeaderData[35];
-  sprintf(HeaderData, "HWID: %s\r\nCH1: %s\r\nCH2: %s", serial_no.c_str(), CH1_DeviceNo.c_str(), CH2_DeviceNo.c_str());
+  sprintf(HeaderData, "HWID: %s\r\nCH1: %s\r\nCH2: %s\r\nROOM: %s", serial_no.c_str(), CH1_DeviceNo.c_str(), CH2_DeviceNo.c_str(), RoomNo.c_str());
   webSocket.setExtraHeaders(HeaderData);
   webSocket.setAuthorization(auth_id.c_str(), auth_passwd.c_str());
   //webSocket.enableHeartbeat();
@@ -1350,6 +1352,8 @@ void SetDefaultVal()
   CH1_Live = preferences.getBool("CH1_Live", true);
   CH2_Live = preferences.getBool("CH2_Live", true);
 
+  RoomNo = preferences.getString("RoomNo", "0");
+
   Device_Name = Default_Device_Name+serial_no;
   WiFi.setHostname(Device_Name.c_str());
   Serial.print("My Name Is : ");
@@ -1495,6 +1499,10 @@ String processor(const String& var)
   if(var == "MAC")
   {
     return WiFi.macAddress();
+  }
+  if(var == "RoomNo")
+  {
+    return RoomNo;
   }
   if(var == "TCP_STATUS")
   {
@@ -1870,6 +1878,25 @@ void setupAsyncServer()
               int var = Value.toInt();
               preferences.putBool("CH2_Live", var);
             }
+          }
+        }
+      }
+    }
+    request->redirect("/");
+  });
+
+  server.on("/roomno", HTTP_POST, [](AsyncWebServerRequest *request) {
+    int params = request->params();
+    String Value;
+    for(int i=0;i<params;i++){
+      AsyncWebParameter* p = request->getParam(i);
+      if(p->isPost()){
+        if (p->name() == "RoomNo") {
+          Value = p->value().c_str();
+          Serial.print("RoomNo : ");
+          Serial.println(Value);
+          if(Value != ""){
+            preferences.putString("RoomNo", Value);
           }
         }
       }

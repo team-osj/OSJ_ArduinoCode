@@ -139,6 +139,10 @@ const char manager_html[] PROGMEM = R"rawliteral(
                 <td>%MAC%</td>
               </tr>
               <tr>
+                <th scope="col">RoomNo</th>
+                <td>%RoomNo%</td>
+              </tr>
+              <tr>
                 <th scope="col">CH1</th>
                 <td>%CH1_DeviceNo%</td>
                 <th>Enable</th>
@@ -308,7 +312,15 @@ const char manager_html[] PROGMEM = R"rawliteral(
 
           <div id="spacer_20"></div>
 
-          
+          <fieldset style="width:700px;background-color: #f7f7f7;">
+                  <legend>Room</legend>
+                  <form method="POST" action="/roomno">
+                      <input type="text" id="RoomNo" name="RoomNo" placeholder="RoomNo"><br>
+                    <div id="spacer_10"></div>
+                    
+                    <input type="submit" value="Submit">
+                  </form>
+          </fieldset>
 
           <div id="spacer_20"></div>
 
